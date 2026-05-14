@@ -13,19 +13,21 @@
 <script src="https://unpkg.com/prop-types@15/prop-types.min.js"></script>
 <script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{background:#050508;color:#f0f0ff;font-family:'Space Grotesk',sans-serif;height:100%;-webkit-font-smoothing:antialiased}
-::-webkit-scrollbar{width:3px}
-::-webkit-scrollbar-track{background:#0d0d14}
-::-webkit-scrollbar-thumb{background:#242438;border-radius:3px}
-input,select{font-family:'Space Grotesk',sans-serif;font-size:16px}
+html,body{background:#030b18;color:#dde8ff;font-family:'Inter',sans-serif;height:100%;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+::-webkit-scrollbar{width:2px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(100,130,255,.18);border-radius:2px}
+input,select{font-family:'Inter',sans-serif;font-size:16px}
 input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none}
-@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
-@keyframes glow{0%,100%{box-shadow:0 0 10px rgba(0,255,136,.3)}50%{box-shadow:0 0 24px rgba(0,255,136,.6)}}
-@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+select option{background:#0c1628}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{box-shadow:0 0 14px rgba(59,130,246,.25)}50%{box-shadow:0 0 32px rgba(59,130,246,.55)}}
+@keyframes slideUp{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.fu{animation:fadeUp .35s cubic-bezier(.2,.8,.4,1) both}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fu{animation:fadeUp .32s cubic-bezier(.16,1,.3,1) both}
 </style>
 </head>
 <body>
@@ -36,11 +38,11 @@ const {AreaChart,Area,BarChart,Bar,LineChart,Line,PieChart,Pie,Cell,XAxis,YAxis,
 
 /* ── THEME ── */
 const T={
-  bg0:"#050508",bg1:"#0d0d14",bg2:"#12121c",bg3:"#1a1a28",bg4:"#242438",
-  border:"rgba(255,255,255,0.06)",t1:"#f0f0ff",t2:"rgba(240,240,255,.75)",
-  t3:"rgba(240,240,255,.45)",t4:"rgba(240,240,255,.2)",
-  neon:"#00ff88",blue:"#4d9fff",purple:"#a855f7",red:"#ff4d6d",
-  yellow:"#ffd60a",cyan:"#00d4ff",orange:"#ff9f43",
+  bg0:"#030b18",bg1:"#060f20",bg2:"#0a1426",bg3:"#0f1c34",bg4:"#162340",
+  border:"rgba(100,140,255,0.1)",t1:"#dde8ff",t2:"rgba(221,232,255,.78)",
+  t3:"rgba(221,232,255,.48)",t4:"rgba(221,232,255,.26)",
+  neon:"#10e89c",blue:"#3b82f6",purple:"#8b5cf6",red:"#f43f5e",
+  yellow:"#f59e0b",cyan:"#22d3ee",orange:"#fb923c",
 };
 const CAT_C={
   "Alimentación":"#ff6b6b","Transporte":"#4ecdc4","Servicios":"#45b7d1",
@@ -187,24 +189,34 @@ function Card({children,accent,style:s={},onClick}){
     onClick,
     onMouseEnter:()=>setHov(true),
     onMouseLeave:()=>setHov(false),
-    style:{background:T.bg2,border:`1px solid ${hov&&accent?accent+"40":T.border}`,borderRadius:16,padding:"16px 18px",
-      transition:"all .2s",boxShadow:hov&&accent?`0 0 0 1px ${accent}15,0 8px 32px rgba(0,0,0,.5)`:"0 2px 8px rgba(0,0,0,.3)",
+    style:{
+      background:"rgba(10,20,38,0.82)",
+      backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",
+      border:`1px solid ${hov&&accent?(accent+"28"):T.border}`,
+      borderRadius:18,padding:"16px 18px",
+      transition:"all .24s cubic-bezier(.16,1,.3,1)",
+      boxShadow:hov&&accent
+        ?`0 0 0 1px ${accent}15,0 16px 48px rgba(0,0,0,.65),inset 0 1px 0 rgba(255,255,255,0.045)`
+        :"0 4px 24px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,0.03)",
       cursor:onClick?"pointer":"default",...s},
   },children);
 }
 
 function KPI({label,value,sub,color,icon,trend}){
   return React.createElement(Card,{accent:color,style:{flex:"1 1 45%",minWidth:140}},
-    React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}},
-      React.createElement('span',{style:{fontSize:10,color:T.t4,textTransform:"uppercase",letterSpacing:1,fontWeight:600}},label),
-      icon&&React.createElement('span',{style:{fontSize:18}},icon)
+    React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:11}},
+      React.createElement('div',{style:{width:34,height:34,borderRadius:10,
+        background:`${color}14`,border:`1px solid ${color}20`,
+        display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0}},icon||"·"),
+      trend!==undefined&&React.createElement('div',{style:{
+        fontSize:10,fontWeight:600,padding:"3px 8px",borderRadius:20,letterSpacing:.3,
+        background:trend>=0?"rgba(244,63,94,.12)":"rgba(16,232,156,.12)",
+        color:trend>=0?T.red:T.neon,border:`1px solid ${trend>=0?T.red:T.neon}20`}},
+        (trend>=0?"↑":"↓")+Math.abs(trend).toFixed(1)+"%")
     ),
-    React.createElement('div',{style:{fontSize:21,fontWeight:700,color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}},value),
-    React.createElement('div',{style:{display:"flex",gap:6,alignItems:"center",marginTop:5}},
-      trend!==undefined&&React.createElement('span',{style:{fontSize:11,color:trend>=0?T.red:T.neon,fontWeight:700}},
-        (trend>=0?"↑":"↓")+Math.abs(trend).toFixed(1)+"%"),
-      sub&&React.createElement('span',{style:{fontSize:11,color:T.t4}},sub)
-    )
+    React.createElement('div',{style:{fontSize:22,fontWeight:700,color,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1,marginBottom:4,lineHeight:1.1}},value),
+    React.createElement('div',{style:{fontSize:11,color:T.t4,letterSpacing:.2}},
+      sub||React.createElement('span',{style:{fontSize:10,textTransform:"uppercase",letterSpacing:1.2,fontWeight:500}},label))
   );
 }
 
@@ -226,9 +238,14 @@ function Modal({open,onClose,title,children}){
       zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center",animation:"fadeIn .15s"}
   },React.createElement('div',{
     onClick:e=>e.stopPropagation(),
-    style:{background:T.bg2,borderRadius:"22px 22px 0 0",width:"100%",maxWidth:480,
+    style:{
+      background:"rgba(9,18,36,0.96)",
+      backdropFilter:"blur(40px)",WebkitBackdropFilter:"blur(40px)",
+      borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,
       maxHeight:"88vh",overflowY:"auto",padding:"14px 22px 32px",
-      border:`1px solid ${T.border}`,borderBottom:"none",animation:"slideUp .28s cubic-bezier(.2,.8,.4,1)"}
+      border:`1px solid rgba(100,140,255,0.12)`,borderBottom:"none",
+      boxShadow:"0 -16px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(100,140,255,0.08)",
+      animation:"slideUp .3s cubic-bezier(.16,1,.3,1)"}
   },
     React.createElement('div',{style:{width:34,height:4,background:T.bg4,borderRadius:2,margin:"0 auto 16px"}}),
     React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}},
@@ -248,8 +265,10 @@ function Field({label,children}){
   );
 }
 
-const INP_S={width:"100%",padding:"11px 13px",background:T.bg3,border:`1px solid ${T.bg4}`,
-  borderRadius:11,color:T.t1,outline:"none",boxSizing:"border-box"};
+const INP_S={width:"100%",padding:"11px 14px",background:"rgba(15,28,52,0.8)",
+  border:`1px solid ${T.border}`,borderRadius:12,color:T.t1,outline:"none",
+  boxSizing:"border-box",transition:"border-color .18s",
+  fontFamily:"'Inter',sans-serif"};
 
 function Inp({label,...p}){return React.createElement(Field,{label},React.createElement('input',{...p,style:{...INP_S,...(p.style||{})}}));}
 function Sel({label,options,...p}){
@@ -263,26 +282,33 @@ function Sel({label,options,...p}){
 function Btn({children,color,variant,onClick,style:s={}}){
   const[hov,setHov]=useState(false);
   const c=color||T.neon;
-  const bg=variant==="outline"?"transparent":hov?c:c+"e8";
-  const fg=variant==="outline"?c:"#000";
+  const isOut=variant==="outline";
   return React.createElement('button',{onClick,
     onMouseEnter:()=>setHov(true),onMouseLeave:()=>setHov(false),
-    style:{background:bg,color:fg,border:variant==="outline"?`1px solid ${c}50`:"none",
-      fontWeight:700,padding:"13px",borderRadius:13,fontSize:15,cursor:"pointer",
+    style:{
+      background:isOut?`${c}0e`:hov?c:`${c}e0`,
+      color:isOut?c:"#fff",
+      border:`1px solid ${isOut?(hov?c:`${c}38`):`${c}20`}`,
+      fontWeight:600,padding:"13px",borderRadius:14,fontSize:15,cursor:"pointer",
       width:"100%",display:"flex",alignItems:"center",gap:8,justifyContent:"center",
-      fontFamily:"'Space Grotesk',sans-serif",transition:"all .18s",
-      boxShadow:variant!=="outline"&&hov?`0 0 18px ${c}50`:"none",...s}},
+      fontFamily:"'Inter',sans-serif",letterSpacing:.2,
+      transition:"all .2s cubic-bezier(.16,1,.3,1)",
+      boxShadow:!isOut&&hov?`0 0 28px ${c}30,0 4px 16px rgba(0,0,0,.4)`:"0 2px 8px rgba(0,0,0,.35)",
+      ...s}},
     children
   );
 }
 
 function Seg({options,value,onChange}){
-  return React.createElement('div',{style:{display:"flex",background:T.bg3,borderRadius:11,padding:3,gap:3,marginBottom:14}},
+  return React.createElement('div',{style:{display:"flex",background:T.bg3,borderRadius:13,padding:4,gap:3,marginBottom:14,border:`1px solid ${T.border}`}},
     options.map(([k,l])=>React.createElement('button',{key:k,onClick:()=>onChange(k),
-      style:{flex:1,padding:"9px",borderRadius:9,border:"none",cursor:"pointer",
-        fontSize:13,fontWeight:600,fontFamily:"'Space Grotesk',sans-serif",
-        background:value===k?T.neon:"transparent",color:value===k?"#000":T.t3,
-        transition:"all .18s",boxShadow:value===k?"0 0 12px rgba(0,255,136,.4)":"none"}},l))
+      style:{flex:1,padding:"9px",borderRadius:10,border:"none",cursor:"pointer",
+        fontSize:13,fontWeight:600,fontFamily:"'Inter',sans-serif",letterSpacing:.2,
+        background:value===k?"rgba(59,130,246,.18)":"transparent",
+        color:value===k?T.blue:T.t3,
+        border:`1px solid ${value===k?T.blue+"30":"transparent"}`,
+        transition:"all .18s cubic-bezier(.16,1,.3,1)",
+        boxShadow:value===k?`0 0 16px rgba(59,130,246,.2),inset 0 1px 0 rgba(59,130,246,.1)`:"none"}},l))
   );
 }
 
@@ -290,35 +316,40 @@ function SwipeRow({onDelete,children,style:outerStyle={}}){
   const[dx,setDx]=useState(0);
   const[open,setOpen]=useState(false);
   const x0=useRef(null);
-  const W=72;
+  const W=78;
   const ts=e=>{x0.current=e.touches[0].clientX;};
   const tm=e=>{
     if(x0.current===null)return;
     const d=e.touches[0].clientX-x0.current;
-    if(d<0)setDx(Math.max(d,-W));
-    else if(open)setDx(Math.min(d-W,0));
+    if(d>0)setDx(Math.min(d,W));
+    else if(open)setDx(Math.max(W+d,0));
   };
   const te=()=>{
-    const snap=open?(dx>-W/2?0:-W):(dx<-W/2?-W:0);
-    setDx(snap);setOpen(snap<0);x0.current=null;
+    const snap=open?(dx<W/2?0:W):(dx>W/2?W:0);
+    setDx(snap);setOpen(snap>0);x0.current=null;
   };
   const close=()=>{setDx(0);setOpen(false);};
   return React.createElement('div',{style:{position:"relative",overflow:"hidden",...outerStyle}},
-    React.createElement('div',{style:{position:"absolute",right:0,top:0,bottom:0,width:W,
-      background:T.red,display:"flex",alignItems:"center",justifyContent:"center"}},
+    React.createElement('div',{style:{
+      position:"absolute",left:0,top:0,bottom:0,width:W,
+      background:"linear-gradient(135deg,#f43f5e,#e11d48)",
+      display:"flex",alignItems:"center",justifyContent:"center"}},
       React.createElement('button',{onClick:()=>{onDelete();close();},
         style:{background:"none",border:"none",color:"#fff",cursor:"pointer",
-          display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"0 10px",width:"100%",height:"100%",justifyContent:"center"}},
-        React.createElement('span',{style:{fontSize:20}},"🗑"),
-        React.createElement('span',{style:{fontSize:9,fontWeight:700,letterSpacing:.5}})
+          display:"flex",flexDirection:"column",alignItems:"center",gap:3,
+          width:"100%",height:"100%",justifyContent:"center",padding:0}},
+        React.createElement('span',{style:{fontSize:22,lineHeight:1}},"🗑"),
+        React.createElement('span',{style:{fontSize:9,fontWeight:700,letterSpacing:1,opacity:.85}},"BORRAR")
       )
     ),
     React.createElement('div',{
       onTouchStart:ts,onTouchMove:tm,onTouchEnd:te,
       onClick:open?close:undefined,
-      style:{transform:`translateX(${dx}px)`,
-        transition:x0.current?"none":"transform .25s cubic-bezier(.2,.8,.4,1)",
-        position:"relative",zIndex:1}
+      style:{
+        transform:`translateX(${dx}px)`,
+        transition:x0.current?"none":"transform .28s cubic-bezier(.16,1,.3,1)",
+        position:"relative",zIndex:1,willChange:"transform"
+      }
     },children)
   );
 }
@@ -476,7 +507,7 @@ function TabTx({data,setData}){
       [["all","Todos"],["in","Ingresos"],["out","Gastos"]].map(([k,l])=>
         React.createElement('button',{key:k,onClick:()=>setFil(k),style:{flex:1,padding:"9px 0",borderRadius:11,
           border:`1px solid ${fil===k?T.neon+"50":T.border}`,cursor:"pointer",fontSize:13,fontWeight:600,
-          fontFamily:"'Space Grotesk',sans-serif",background:fil===k?"rgba(0,255,136,.1)":T.bg2,
+          fontFamily:"'Inter',sans-serif",background:fil===k?"rgba(0,255,136,.1)":T.bg2,
           color:fil===k?T.neon:T.t4,boxShadow:fil===k?"0 0 12px rgba(0,255,136,.2)":"none",transition:"all .18s"}},l)
       )
     ),
@@ -507,15 +538,10 @@ function TabTx({data,setData}){
                 React.createElement('div',{style:{fontSize:10,color:T.t4,marginTop:1}},t.cat+" · "+t.met+(t.cardId&&(data.cards||[]).find(c=>c.id===t.cardId)?(" · "+((data.cards||[]).find(c=>c.id===t.cardId)||{nm:""}).nm):"")+" · "+t.dt.slice(8)+"/"+t.dt.slice(5,7))
               )
             ),
-            React.createElement('div',{style:{display:"flex",alignItems:"center",gap:6,flexShrink:0}},
-              React.createElement('div',{style:{fontSize:14,fontWeight:700,color:t.tp==="in"?T.neon:T.t2,
-                fontFamily:"'JetBrains Mono',monospace"}},
-                (t.tp==="in"?"+":"−")+F(t.amt)),
-              React.createElement('button',{onClick:e=>{e.stopPropagation();del(t.id);},
-                style:{background:"rgba(255,77,109,.15)",border:"none",borderRadius:7,
-                  width:28,height:28,cursor:"pointer",color:T.red,fontSize:14,
-                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"✕")
-            )
+            React.createElement('div',{style:{fontSize:14,fontWeight:600,
+              color:t.tp==="in"?T.neon:T.t2,
+              fontFamily:"'JetBrains Mono',monospace",flexShrink:0}},
+              (t.tp==="in"?"+":"−")+F(t.amt))
           )))
         )
       );
@@ -523,10 +549,13 @@ function TabTx({data,setData}){
     keys.length===0&&React.createElement('div',{style:{textAlign:"center",padding:"40px 0",color:T.t4}},"Sin movimientos"),
     React.createElement('div',{style:{position:"fixed",bottom:86,right:18,zIndex:99}},
       React.createElement('button',{onClick:()=>{setForm(blank);setEditId(null);setShow(true);},
-        style:{width:52,height:52,borderRadius:"50%",border:"none",cursor:"pointer",
-          background:T.neon,color:"#000",fontSize:26,boxShadow:"0 0 20px rgba(0,255,136,.5)",
-          animation:"glow 3s ease infinite",display:"flex",alignItems:"center",justifyContent:"center",
-          fontWeight:300}},"+")
+        style:{width:54,height:54,borderRadius:"50%",border:"none",cursor:"pointer",
+          background:"linear-gradient(135deg,#3b82f6,#6366f1)",
+          color:"#fff",fontSize:28,
+          boxShadow:"0 0 28px rgba(59,130,246,.5),0 8px 24px rgba(0,0,0,.4)",
+          animation:"glow 3s ease infinite",display:"flex",alignItems:"center",
+          justifyContent:"center",fontWeight:300,letterSpacing:-1,
+          transition:"transform .18s cubic-bezier(.16,1,.3,1)"}},"+")
     ),
     React.createElement(Modal,{open:show,onClose:()=>{setShow(false);setEditId(null);},title:editId?"Editar movimiento":"Nuevo movimiento"},
       React.createElement(Seg,{options:[["out","Gasto"],["in","Ingreso"]],value:form.tp,onChange:v=>set({tp:v,cat:v==="in"?"Salario":"Alimentación"})}),
@@ -976,7 +1005,7 @@ function TabCards({data,setData}){
             React.createElement('div',{style:{display:"flex",gap:6,alignItems:"flex-start"}},
               React.createElement('button',{onClick:()=>{setPayCard(c);setShowPay(true);},
                 style:{background:col+"22",border:`1px solid ${col}50`,borderRadius:9,padding:"5px 11px",
-                  cursor:"pointer",color:col,fontSize:12,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif"}},
+                  cursor:"pointer",color:col,fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif"}},
                 "Pagar"),
               React.createElement('button',{onClick:()=>openEdit(c),
                 style:{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:9,width:32,height:32,
@@ -1080,14 +1109,19 @@ function App(){
   const accs={home:T.neon,tx:T.blue,cards:T.purple,budgets:T.blue,debts:T.yellow,fixed:T.cyan,hist:T.purple};
   const curTab=tabs.find(t=>t.id===tab);
   return React.createElement('div',{style:{background:T.bg0,minHeight:"100vh",color:T.t1,
-    fontFamily:"'Space Grotesk',sans-serif",maxWidth:500,margin:"0 auto",paddingBottom:90}},
+    fontFamily:"'Inter',sans-serif",maxWidth:500,margin:"0 auto",paddingBottom:90}},
     React.createElement('div',{style:{
-      position:"fixed",inset:0,pointerEvents:"none",zIndex:0,opacity:.35,
-      backgroundImage:`linear-gradient(${T.border} 1px,transparent 1px),linear-gradient(90deg,${T.border} 1px,transparent 1px)`,
-      backgroundSize:"44px 44px",maxWidth:500,margin:"0 auto"
+      position:"fixed",inset:0,pointerEvents:"none",zIndex:0,
+      backgroundImage:`radial-gradient(ellipse 80% 50% at 50% -20%,rgba(59,130,246,0.08) 0%,transparent 60%),linear-gradient(rgba(100,140,255,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(100,140,255,0.04) 1px,transparent 1px)`,
+      backgroundSize:"100% 100%,48px 48px,48px 48px",
+      maxWidth:500,margin:"0 auto"
     }}),
-    React.createElement('div',{style:{position:"sticky",top:0,zIndex:50,background:T.bg0+"ee",
-      backdropFilter:"blur(18px)",borderBottom:`1px solid ${T.border}`,padding:"14px 18px 11px"}},
+    React.createElement('div',{style:{position:"sticky",top:0,zIndex:50,
+      background:"rgba(3,11,24,0.9)",
+      backdropFilter:"blur(28px)",WebkitBackdropFilter:"blur(28px)",
+      borderBottom:`1px solid rgba(100,140,255,0.1)`,
+      padding:"14px 18px 11px",
+      boxShadow:"0 4px 28px rgba(0,0,0,.35)"}},
       React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}},
         React.createElement('div',null,
           React.createElement('div',{style:{fontSize:10,color:accs[tab],textTransform:"uppercase",
@@ -1109,18 +1143,31 @@ function App(){
       tab==="hist"&&React.createElement(TabHistory,{data})
     ),
     React.createElement('div',{style:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
-      width:"100%",maxWidth:500,zIndex:100,background:T.bg1+"f2",
-      backdropFilter:"blur(28px)",borderTop:`1px solid ${T.border}`}},
-      React.createElement('div',{style:{display:"flex",padding:"5px 2px 10px",overflowX:"auto",scrollbarWidth:"none",msOverflowStyle:"none"}},
+      width:"100%",maxWidth:500,zIndex:100,
+      background:"rgba(6,15,32,0.94)",
+      backdropFilter:"blur(36px)",WebkitBackdropFilter:"blur(36px)",
+      borderTop:`1px solid rgba(100,140,255,0.1)`,
+      boxShadow:"0 -12px 40px rgba(0,0,0,.6)"}},
+      React.createElement('div',{style:{display:"flex",padding:"6px 2px 16px",overflowX:"auto",
+        scrollbarWidth:"none",msOverflowStyle:"none"}},
         tabs.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),
-          style:{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",
-            alignItems:"center",gap:2,padding:"4px 2px",borderRadius:10,flex:"1 0 60px",minWidth:60}},
-          React.createElement('div',{style:{width:34,height:34,borderRadius:9,display:"flex",
-            alignItems:"center",justifyContent:"center",fontSize:17,transition:"all .18s",
-            background:tab===t.id?t.col+"1a":"transparent",
-            boxShadow:tab===t.id?`0 0 10px ${t.col}25`:"none"}},t.icon),
-          React.createElement('span',{style:{fontSize:9,fontWeight:600,
-            color:tab===t.id?t.col:T.t4,transition:"color .18s"}},t.label)
+          style:{background:"none",border:"none",cursor:"pointer",display:"flex",
+            flexDirection:"column",alignItems:"center",gap:3,padding:"5px 2px",
+            borderRadius:12,flex:"1 0 60px",minWidth:60,
+            transition:"all .2s cubic-bezier(.16,1,.3,1)"}},
+          React.createElement('div',{style:{
+            width:38,height:38,borderRadius:13,display:"flex",
+            alignItems:"center",justifyContent:"center",fontSize:18,
+            transition:"all .22s cubic-bezier(.16,1,.3,1)",
+            background:tab===t.id?`${t.col}1e`:"transparent",
+            boxShadow:tab===t.id?`0 0 20px ${t.col}28,inset 0 1px 0 ${t.col}18`:"none",
+            border:`1px solid ${tab===t.id?t.col+"28":"transparent"}`,
+            transform:tab===t.id?"scale(1.08)":"scale(1)"}},t.icon),
+          React.createElement('span',{style:{
+            fontSize:9,fontWeight:600,letterSpacing:.4,
+            color:tab===t.id?t.col:T.t4,
+            transition:"all .18s",
+            opacity:tab===t.id?1:.7}},t.label)
         ))
       )
     )
