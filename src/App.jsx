@@ -5,14 +5,15 @@ import {
   Box,
   Button,
   Card,
+  Divider,
   Drawer,
   Group,
+  Modal,
   NumberInput,
   Paper,
   Progress,
   ScrollArea,
   SegmentedControl,
-  Select,
   SimpleGrid,
   Stack,
   Switch,
@@ -36,13 +37,14 @@ import {
   IconPigMoney,
   IconPlus,
   IconReceipt2,
+  IconSelector,
   IconShoppingBag,
   IconSun,
   IconTarget,
   IconTrash,
   IconWallet
 } from '@tabler/icons-react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Area,
   AreaChart,
@@ -153,6 +155,57 @@ function SwipeRow({ children, onDelete }) {
   );
 }
 
+function PickerField({ label, value, placeholder, options, onChange }) {
+  const [opened, setOpened] = useState(false);
+  return (
+    <>
+      <Button
+        variant="subtle"
+        justify="space-between"
+        rightSection={<IconSelector size={16} />}
+        onClick={() => setOpened(true)}
+        styles={{
+          root: {
+            width: '100%',
+            height: 58,
+            borderRadius: 16,
+            border: '1px solid var(--mantine-color-dark-4)',
+            background: 'rgba(255,255,255,.03)',
+            paddingInline: 16
+          },
+          inner: { justifyContent: 'space-between', width: '100%' },
+          label: { width: '100%', textAlign: 'left', fontWeight: 500 }
+        }}
+      >
+        <Box ta="left">
+          <Text size="xs" c="dimmed" fw={700} mb={4}>{label}</Text>
+          <Text>{value || placeholder}</Text>
+        </Box>
+      </Button>
+      <Modal opened={opened} onClose={() => setOpened(false)} title={label} centered radius="xl">
+        <Stack gap="xs">
+          {options.map(option => {
+            const item = typeof option === 'string' ? { value: option, label: option } : option;
+            return (
+              <Button
+                key={item.value}
+                variant={item.value === value ? 'light' : 'subtle'}
+                justify="flex-start"
+                onClick={() => {
+                  onChange(item.value);
+                  setOpened(false);
+                }}
+              >
+                {item.label}
+              </Button>
+            );
+          })}
+        </Stack>
+      </Modal>
+    </>
+  );
+}
+
 function TransactionDrawer({ opened, onClose, value, onSave, onDelete, cards }) {
   const [form, setForm] = useState(value);
 
@@ -161,16 +214,16 @@ function TransactionDrawer({ opened, onClose, value, onSave, onDelete, cards }) 
   }, [value]);
 
   return (
-    <Drawer opened={opened} onClose={onClose} position="bottom" size="86%" radius="xl" title={<Title order={3}>{form.id ? 'Editar movimiento' : 'Nuevo movimiento'}</Title>}>
+    <Drawer opened={opened} onClose={onClose} position="bottom" size="78%" radius="xl" title={<Title order={3}>{form.id ? 'Editar movimiento' : 'Nuevo movimiento'}</Title>} styles={{ body: { paddingBottom: 110 } }}>
       <Stack pb={90}>
         <SegmentedControl fullWidth value={form.tp} onChange={tp => setForm(current => ({ ...current, tp, cat: tp === 'in' ? 'Salario' : 'Alimentación' }))} data={[{ label: 'Gasto', value: 'out' }, { label: 'Ingreso', value: 'in' }]} />
         <TextInput type="date" label="Fecha" value={form.dt} onChange={event => setForm(current => ({ ...current, dt: event.currentTarget.value }))} />
-        <Select label="Categoría" data={form.tp === 'in' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES} value={form.cat} onChange={cat => setForm(current => ({ ...current, cat: cat || current.cat }))} />
+        <PickerField label="Categoría" placeholder="Selecciona categoría" options={(form.tp === 'in' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(item => ({ value: item, label: item }))} value={form.cat} onChange={cat => setForm(current => ({ ...current, cat }))} />
         <TextInput label="Descripción" value={form.desc} onChange={event => setForm(current => ({ ...current, desc: event.currentTarget.value }))} />
         <NumberInput label="Monto" hideControls thousandSeparator="," value={form.amt} onChange={amt => setForm(current => ({ ...current, amt: Number(amt) || 0 }))} />
-        <Select label="Método" data={METHODS} value={form.met} onChange={met => setForm(current => ({ ...current, met: met || current.met, cardId: met === 'Crédito' ? current.cardId : null }))} />
+        <PickerField label="Método" placeholder="Selecciona método" options={METHODS.map(item => ({ value: item, label: item }))} value={form.met} onChange={met => setForm(current => ({ ...current, met, cardId: met === 'Crédito' ? current.cardId : null }))} />
         {form.met === 'Crédito' && (
-          <Select label="Tarjeta" data={cards.map(card => ({ value: card.id, label: card.nm }))} value={form.cardId} onChange={cardId => setForm(current => ({ ...current, cardId }))} />
+          <PickerField label="Tarjeta" placeholder="Selecciona tarjeta" options={cards.map(card => ({ value: card.id, label: card.nm }))} value={form.cardId} onChange={cardId => setForm(current => ({ ...current, cardId }))} />
         )}
       </Stack>
       <Paper pos="absolute" left={0} right={0} bottom={0} p="md" withBorder bg="var(--mantine-color-body)">
@@ -246,6 +299,30 @@ export default function App() {
     drawerHandlers.close();
   };
 
+  const removeCard = id => {
+    setData(current => ({
+      ...current,
+      cards: current.cards.filter(card => card.id !== id),
+      tx: current.tx.map(item => item.cardId === id ? { ...item, cardId: null } : item)
+    }));
+  };
+
+  const removeBudget = category => {
+    setData(current => {
+      const budgets = { ...current.budgets };
+      delete budgets[category];
+      return { ...current, budgets };
+    });
+  };
+
+  const removeSaving = id => {
+    setData(current => ({ ...current, savings: current.savings.filter(goal => goal.id !== id) }));
+  };
+
+  const removeShopping = id => {
+    setData(current => ({ ...current, shopping: current.shopping.filter(item => item.id !== id) }));
+  };
+
   const buyShoppingItem = item => {
     const tx = { id: newId(), dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: item.cat, desc: item.nm, amt: item.price, met: 'Débito', cardId: null };
     setData(current => ({
@@ -285,6 +362,53 @@ export default function App() {
     { key: 'hist', label: 'Hist', icon: IconHistory }
   ];
 
+  const predictionCards = [
+    {
+      label: 'Ingreso promedio',
+      value: fmt(trend.reduce((sum, item) => sum + item.Ingresos, 0) / Math.max(trend.length, 1)),
+      sub: 'Basado en 6 meses',
+      color: 'green'
+    },
+    {
+      label: 'Gasto promedio',
+      value: fmt(trend.reduce((sum, item) => sum + item.Gastos, 0) / Math.max(trend.length, 1)),
+      sub: 'Ritmo esperado',
+      color: 'red'
+    },
+    {
+      label: 'Ahorro potencial',
+      value: fmt((trend.reduce((sum, item) => sum + item.Ingresos, 0) - trend.reduce((sum, item) => sum + item.Gastos, 0)) / Math.max(trend.length, 1)),
+      sub: 'Mensual estimado',
+      color: 'blue'
+    }
+  ];
+
+  const renderHistoryList = () => (
+    <Stack gap="md">
+      {groupedHistory.map(([key, items]) => (
+        <Stack key={key} gap="xs">
+          <Group justify="space-between">
+            <Text size="sm" fw={700} c="dimmed">{MONTHS[Number(key.slice(5, 7)) - 1]} {key.slice(0, 4)}</Text>
+            <Text size="sm" fw={700} className="mono">{fmt(items.reduce((sum, item) => sum + (item.tp === 'in' ? item.amt : -item.amt), 0))}</Text>
+          </Group>
+          {items.sort((a, b) => b.dt.localeCompare(a.dt)).map(item => (
+            <SwipeRow key={item.id} onDelete={() => removeTransaction(item.id)}>
+              <Card radius="xl" withBorder p="md" onClick={() => openNewTransaction(item)} style={{ cursor: 'pointer' }}>
+                <Group justify="space-between" wrap="nowrap">
+                  <Box>
+                    <Text fw={800}>{item.desc}</Text>
+                    <Text size="sm" c="dimmed">{item.cat} · {item.met} · {item.dt}</Text>
+                  </Box>
+                  <Text fw={800} className="mono" c={item.tp === 'in' ? 'green' : undefined}>{item.tp === 'in' ? '+' : '−'}{fmt(item.amt)}</Text>
+                </Group>
+              </Card>
+            </SwipeRow>
+          ))}
+        </Stack>
+      ))}
+    </Stack>
+  );
+
   return (
     <Box className="app-shell grid-overlay" pb={120}>
       <Box maw={560} mx="auto" pt="md">
@@ -298,7 +422,15 @@ export default function App() {
           </Group>
         </Paper>
 
-        <Stack px="md" gap="md">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={tab}
+            initial={{ opacity: 0, y: 16, scale: 0.985 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.99 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <Stack px="md" gap="md">
           {tab === 'home' && (
             <>
               <Paper p="md" radius="xl" withBorder>
@@ -387,27 +519,7 @@ export default function App() {
           {tab === 'tx' && (
             <>
               <SectionHeader label="Control" title="Movimientos" action={<ActionIcon size="xl" radius="xl" onClick={() => openNewTransaction()}><IconPlus size={20} /></ActionIcon>} />
-              {groupedHistory.map(([key, items]) => (
-                <Stack key={key} gap="xs">
-                  <Group justify="space-between">
-                    <Text size="sm" fw={700} c="dimmed">{MONTHS[Number(key.slice(5, 7)) - 1]} {key.slice(0, 4)}</Text>
-                    <Text size="sm" fw={700} className="mono">{fmt(items.reduce((sum, item) => sum + (item.tp === 'in' ? item.amt : -item.amt), 0))}</Text>
-                  </Group>
-                  {items.sort((a, b) => b.dt.localeCompare(a.dt)).map(item => (
-                    <SwipeRow key={item.id} onDelete={() => removeTransaction(item.id)}>
-                      <Card radius="xl" withBorder p="md" onClick={() => openNewTransaction(item)} style={{ cursor: 'pointer' }}>
-                        <Group justify="space-between" wrap="nowrap">
-                          <Box>
-                            <Text fw={800}>{item.desc}</Text>
-                            <Text size="sm" c="dimmed">{item.cat} · {item.met} · {item.dt}</Text>
-                          </Box>
-                          <Text fw={800} className="mono" c={item.tp === 'in' ? 'green' : undefined}>{item.tp === 'in' ? '+' : '−'}{fmt(item.amt)}</Text>
-                        </Group>
-                      </Card>
-                    </SwipeRow>
-                  ))}
-                </Stack>
-              ))}
+              {renderHistoryList()}
             </>
           )}
 
@@ -415,26 +527,28 @@ export default function App() {
             <>
               <SectionHeader label="BAC" title="Tarjetas" />
               {data.cards.map(card => (
-                <Card key={card.id} radius="xl" withBorder p="lg" style={{ background: 'linear-gradient(135deg, rgba(91,157,255,.18), transparent)' }}>
-                  <Group justify="space-between" align="start">
-                    <Box>
-                      <Title order={3}>{card.nm}</Title>
-                      <Text size="sm" c="dimmed">•••• {card.last4} · corte {card.closing} · pago {card.due}</Text>
-                    </Box>
-                    <Badge color="blue" variant="light">{Math.round((card.balance / card.limit) * 100)}%</Badge>
-                  </Group>
-                  <Group mt="lg" justify="space-between">
-                    <Box>
-                      <Text size="sm" c="dimmed">Saldo</Text>
-                      <Text fz={28} fw={800} className="mono">{fmt(card.balance)}</Text>
-                    </Box>
-                    <Box ta="right">
-                      <Text size="sm" c="dimmed">Límite</Text>
-                      <Text fz={22} fw={800} className="mono">{fmt(card.limit)}</Text>
-                    </Box>
-                  </Group>
-                  <Progress mt="md" size="lg" radius="xl" value={(card.balance / card.limit) * 100} color="blue" />
-                </Card>
+                <SwipeRow key={card.id} onDelete={() => removeCard(card.id)}>
+                  <Card radius="xl" withBorder p="lg" style={{ background: 'linear-gradient(135deg, rgba(91,157,255,.18), transparent)' }}>
+                    <Group justify="space-between" align="start">
+                      <Box>
+                        <Title order={3}>{card.nm}</Title>
+                        <Text size="sm" c="dimmed">•••• {card.last4} · corte {card.closing} · pago {card.due}</Text>
+                      </Box>
+                      <Badge color="blue" variant="light">{Math.round((card.balance / card.limit) * 100)}%</Badge>
+                    </Group>
+                    <Group mt="lg" justify="space-between">
+                      <Box>
+                        <Text size="sm" c="dimmed">Saldo</Text>
+                        <Text fz={28} fw={800} className="mono">{fmt(card.balance)}</Text>
+                      </Box>
+                      <Box ta="right">
+                        <Text size="sm" c="dimmed">Límite</Text>
+                        <Text fz={22} fw={800} className="mono">{fmt(card.limit)}</Text>
+                      </Box>
+                    </Group>
+                    <Progress mt="md" size="lg" radius="xl" value={(card.balance / card.limit) * 100} color="blue" />
+                  </Card>
+                </SwipeRow>
               ))}
             </>
           )}
@@ -445,16 +559,18 @@ export default function App() {
               {Object.entries(data.budgets).map(([category, budget]) => {
                 const spent = monthTx.filter(item => item.tp === 'out' && item.cat === category).reduce((sum, item) => sum + item.amt, 0);
                 return (
-                  <Card key={category} radius="xl" withBorder onClick={() => setTab('tx')} style={{ cursor: 'pointer' }}>
-                    <Group justify="space-between">
-                      <Box>
-                        <Text fw={800}>{category}</Text>
-                        <Text size="sm" c="dimmed">{fmt(spent)} de {fmt(budget)}</Text>
-                      </Box>
-                      <Badge color={spent > budget ? 'red' : 'blue'}>{Math.round((spent / budget) * 100)}%</Badge>
-                    </Group>
-                    <Progress mt="md" size="lg" radius="xl" value={Math.min((spent / budget) * 100, 100)} color={spent > budget ? 'red' : 'blue'} />
-                  </Card>
+                  <SwipeRow key={category} onDelete={() => removeBudget(category)}>
+                    <Card radius="xl" withBorder onClick={() => setTab('tx')} style={{ cursor: 'pointer' }}>
+                      <Group justify="space-between">
+                        <Box>
+                          <Text fw={800}>{category}</Text>
+                          <Text size="sm" c="dimmed">{fmt(spent)} de {fmt(budget)}</Text>
+                        </Box>
+                        <Badge color={spent > budget ? 'red' : 'blue'}>{Math.round((spent / budget) * 100)}%</Badge>
+                      </Group>
+                      <Progress mt="md" size="lg" radius="xl" value={Math.min((spent / budget) * 100, 100)} color={spent > budget ? 'red' : 'blue'} />
+                    </Card>
+                  </SwipeRow>
                 );
               })}
             </>
@@ -464,17 +580,19 @@ export default function App() {
             <>
               <SectionHeader label="Sistema" title="Ahorros" />
               {data.savings.map(goal => (
-                <Card key={goal.id} radius="xl" withBorder>
-                  <Group justify="space-between">
-                    <Box>
-                      <Text fw={800}>{goal.nm}</Text>
-                      <Text size="sm" c="dimmed">Meta {fmt(goal.target)} · fecha {goal.due}</Text>
-                    </Box>
-                    <Text fw={800} className="mono">{fmt(goal.current)}</Text>
-                  </Group>
-                  <Progress mt="md" size="lg" radius="xl" color="teal" value={(goal.current / goal.target) * 100} />
-                  <Text mt="sm" size="sm" c="dimmed">Aporte sugerido mensual: {fmt(goal.monthly)}</Text>
-                </Card>
+                <SwipeRow key={goal.id} onDelete={() => removeSaving(goal.id)}>
+                  <Card radius="xl" withBorder>
+                    <Group justify="space-between">
+                      <Box>
+                        <Text fw={800}>{goal.nm}</Text>
+                        <Text size="sm" c="dimmed">Meta {fmt(goal.target)} · fecha {goal.due}</Text>
+                      </Box>
+                      <Text fw={800} className="mono">{fmt(goal.current)}</Text>
+                    </Group>
+                    <Progress mt="md" size="lg" radius="xl" color="teal" value={(goal.current / goal.target) * 100} />
+                    <Text mt="sm" size="sm" c="dimmed">Aporte sugerido mensual: {fmt(goal.monthly)}</Text>
+                  </Card>
+                </SwipeRow>
               ))}
             </>
           )}
@@ -483,16 +601,18 @@ export default function App() {
             <>
               <SectionHeader label="Rutina" title="Compras frecuentes" />
               {data.shopping.map(item => (
-                <Card key={item.id} radius="xl" withBorder>
-                  <Group justify="space-between" align="start">
-                    <Box>
-                      <Text fw={800}>{item.nm}</Text>
-                      <Text size="sm" c="dimmed">{item.cat} · {item.freq} · última {item.last}</Text>
-                    </Box>
-                    <Text fw={800} className="mono">{fmt(item.price)}</Text>
-                  </Group>
-                  <Button mt="md" variant="light" leftSection={<IconShoppingBag size={16} />} onClick={() => buyShoppingItem(item)}>Comprar ahora</Button>
-                </Card>
+                <SwipeRow key={item.id} onDelete={() => removeShopping(item.id)}>
+                  <Card radius="xl" withBorder>
+                    <Group justify="space-between" align="start">
+                      <Box>
+                        <Text fw={800}>{item.nm}</Text>
+                        <Text size="sm" c="dimmed">{item.cat} · {item.freq} · última {item.last}</Text>
+                      </Box>
+                      <Text fw={800} className="mono">{fmt(item.price)}</Text>
+                    </Group>
+                    <Button mt="md" variant="light" leftSection={<IconShoppingBag size={16} />} onClick={() => buyShoppingItem(item)}>Comprar ahora</Button>
+                  </Card>
+                </SwipeRow>
               ))}
             </>
           )}
@@ -515,9 +635,22 @@ export default function App() {
                 </Box>
                 <Text mt="md" size="sm" c="dimmed">Predicción rápida: si mantienes este ritmo, el gasto próximo mes ronda {fmt(trend.reduce((sum, item) => sum + item.Gastos, 0) / Math.max(trend.length, 1))}.</Text>
               </Card>
+              <SimpleGrid cols={{ base: 1, sm: 3 }}>
+                {predictionCards.map(item => (
+                  <Card key={item.label} radius="xl" withBorder>
+                    <Text size="xs" fw={800} c="dimmed" tt="uppercase">{item.label}</Text>
+                    <Text mt="xs" fw={800} fz={24} c={item.color} className="mono">{item.value}</Text>
+                    <Text size="sm" c="dimmed" mt={4}>{item.sub}</Text>
+                  </Card>
+                ))}
+              </SimpleGrid>
+              <Divider label="Todos los movimientos" labelPosition="center" />
+              {renderHistoryList()}
             </>
           )}
         </Stack>
+          </motion.div>
+        </AnimatePresence>
 
         <Paper pos="fixed" bottom={12} left="50%" style={{ transform: 'translateX(-50%)', width: 'min(96vw, 560px)', zIndex: 120, backdropFilter: 'blur(22px)' }} radius="24px" withBorder p="xs">
           <ScrollArea.Autosize mah={82} className="hide-scrollbar">
