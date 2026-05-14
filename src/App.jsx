@@ -288,10 +288,22 @@ export default function App() {
   const [budgetModalOpened, budgetModalHandlers] = useDisclosure(false);
   const [cardModalOpened, cardModalHandlers] = useDisclosure(false);
   const [savingModalOpened, savingModalHandlers] = useDisclosure(false);
+  const [accountModalOpened, accountModalHandlers] = useDisclosure(false);
+  const [debtModalOpened, debtModalHandlers] = useDisclosure(false);
+  const [investmentModalOpened, investmentModalHandlers] = useDisclosure(false);
+  const [fixedModalOpened, fixedModalHandlers] = useDisclosure(false);
+  const [extraModalOpened, extraModalHandlers] = useDisclosure(false);
+  const [platformModalOpened, platformModalHandlers] = useDisclosure(false);
   const [draft, setDraft] = useState({ id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
   const [budgetDraft, setBudgetDraft] = useState({ category: 'Alimentación', amount: 0 });
   const [cardDraft, setCardDraft] = useState({ nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
   const [savingDraft, setSavingDraft] = useState({ nm: '', target: 0, current: 0, due: '', monthly: 0 });
+  const [accountDraft, setAccountDraft] = useState({ id: null, nm: '', type: 'Bancaria', currency: 'CRC', balance: 0 });
+  const [debtDraft, setDebtDraft] = useState({ id: null, nm: '', rem: 0, payment: 0, rate: 0, type: 'Consumo' });
+  const [investmentDraft, setInvestmentDraft] = useState({ id: null, nm: '', invested: 0, current: 0, risk: 'Medio' });
+  const [fixedDraft, setFixedDraft] = useState({ id: null, nm: '', amt: 0, day: 1, cat: 'Servicios' });
+  const [extraDraft, setExtraDraft] = useState({ id: null, nm: '', amt: 0, cat: 'Otros' });
+  const [platformDraft, setPlatformDraft] = useState({ id: null, nm: '', amt: 0, due: 1 });
   const [currentMonth, setCurrentMonth] = useState(() => {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() };
@@ -376,6 +388,21 @@ export default function App() {
     setData(current => ({ ...current, shopping: current.shopping.filter(item => item.id !== id) }));
   };
 
+  const upsertListItem = (key, draftItem) => {
+    setData(current => {
+      const list = current[key];
+      const nextItem = draftItem.id ? draftItem : { ...draftItem, id: newId() };
+      return {
+        ...current,
+        [key]: draftItem.id ? list.map(item => item.id === draftItem.id ? nextItem : item) : [...list, nextItem]
+      };
+    });
+  };
+
+  const removeListItem = (key, id) => {
+    setData(current => ({ ...current, [key]: current[key].filter(item => item.id !== id) }));
+  };
+
   const saveBudget = () => {
     if (!budgetDraft.category || !budgetDraft.amount) {
       return;
@@ -412,6 +439,48 @@ export default function App() {
     }));
     setSavingDraft({ nm: '', target: 0, current: 0, due: '', monthly: 0 });
     savingModalHandlers.close();
+  };
+
+  const saveAccount = () => {
+    if (!accountDraft.nm) return;
+    upsertListItem('accounts', accountDraft);
+    setAccountDraft({ id: null, nm: '', type: 'Bancaria', currency: 'CRC', balance: 0 });
+    accountModalHandlers.close();
+  };
+
+  const saveDebt = () => {
+    if (!debtDraft.nm) return;
+    upsertListItem('debts', debtDraft);
+    setDebtDraft({ id: null, nm: '', rem: 0, payment: 0, rate: 0, type: 'Consumo' });
+    debtModalHandlers.close();
+  };
+
+  const saveInvestment = () => {
+    if (!investmentDraft.nm) return;
+    upsertListItem('investments', investmentDraft);
+    setInvestmentDraft({ id: null, nm: '', invested: 0, current: 0, risk: 'Medio' });
+    investmentModalHandlers.close();
+  };
+
+  const saveFixed = () => {
+    if (!fixedDraft.nm) return;
+    upsertListItem('fixed', fixedDraft);
+    setFixedDraft({ id: null, nm: '', amt: 0, day: 1, cat: 'Servicios' });
+    fixedModalHandlers.close();
+  };
+
+  const saveExtra = () => {
+    if (!extraDraft.nm) return;
+    upsertListItem('extras', extraDraft);
+    setExtraDraft({ id: null, nm: '', amt: 0, cat: 'Otros' });
+    extraModalHandlers.close();
+  };
+
+  const savePlatform = () => {
+    if (!platformDraft.nm) return;
+    upsertListItem('platforms', platformDraft);
+    setPlatformDraft({ id: null, nm: '', amt: 0, due: 1 });
+    platformModalHandlers.close();
   };
 
   const buyShoppingItem = item => {
@@ -594,9 +663,10 @@ export default function App() {
                 </UniformCard>
               </SimpleGrid>
 
-              <SectionHeader label="Cuentas" title="Posición por origen" />
+              <SectionHeader label="Cuentas" title="Posición por origen" action={<ActionIcon size="xl" radius="xl" onClick={() => accountModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.accounts.map(account => (
-                <UniformCard key={account.id}>
+                <SwipeRow key={account.id} onDelete={() => removeListItem('accounts', account.id)}>
+                <UniformCard onClick={() => { setAccountDraft(account); accountModalHandlers.open(); }}>
                   <Group justify="space-between">
                     <Box>
                       <Text fw={800}>{account.nm}</Text>
@@ -605,6 +675,7 @@ export default function App() {
                     <Text fw={800} className="mono">{account.currency === 'USD' ? `$${account.balance.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : fmt(account.balance)}</Text>
                   </Group>
                 </UniformCard>
+                </SwipeRow>
               ))}
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
@@ -676,9 +747,10 @@ export default function App() {
                   </UniformCard>
                 </SwipeRow>
               ))}
-              <SectionHeader label="Crédito" title="Deudas y préstamos" />
+              <SectionHeader label="Crédito" title="Deudas y préstamos" action={<ActionIcon size="xl" radius="xl" onClick={() => debtModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.debts.map(item => (
-                <UniformCard key={item.id}>
+                <SwipeRow key={item.id} onDelete={() => removeListItem('debts', item.id)}>
+                <UniformCard onClick={() => { setDebtDraft(item); debtModalHandlers.open(); }}>
                   <Group justify="space-between" align="start">
                     <Box>
                       <Text fw={800}>{item.nm}</Text>
@@ -688,6 +760,7 @@ export default function App() {
                   </Group>
                   <Text mt="md" size="sm" c="dimmed">Cuota mensual estimada: {fmt(item.payment)}</Text>
                 </UniformCard>
+                </SwipeRow>
               ))}
             </>
           )}
@@ -733,9 +806,10 @@ export default function App() {
                   </UniformCard>
                 </SwipeRow>
               ))}
-              <SectionHeader label="Activos" title="Inversiones" />
+              <SectionHeader label="Activos" title="Inversiones" action={<ActionIcon size="xl" radius="xl" onClick={() => investmentModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.investments.map(item => (
-                <UniformCard key={item.id}>
+                <SwipeRow key={item.id} onDelete={() => removeListItem('investments', item.id)}>
+                <UniformCard onClick={() => { setInvestmentDraft(item); investmentModalHandlers.open(); }}>
                   <Group justify="space-between" align="start">
                     <Box>
                       <Text fw={800}>{item.nm}</Text>
@@ -745,6 +819,7 @@ export default function App() {
                   </Group>
                   <Text mt="md" size="sm" c="dimmed">Aporte total: {fmt(item.invested)} · rendimiento: {fmt(item.current - item.invested)}</Text>
                 </UniformCard>
+                </SwipeRow>
               ))}
             </>
           )}
@@ -766,9 +841,10 @@ export default function App() {
                   </UniformCard>
                 </SwipeRow>
               ))}
-              <SectionHeader label="Servicios" title="Plataformas digitales" />
+              <SectionHeader label="Servicios" title="Plataformas digitales" action={<ActionIcon size="xl" radius="xl" onClick={() => platformModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.platforms.map(item => (
-                <UniformCard key={item.id}>
+                <SwipeRow key={item.id} onDelete={() => removeListItem('platforms', item.id)}>
+                <UniformCard onClick={() => { setPlatformDraft(item); platformModalHandlers.open(); }}>
                   <Group justify="space-between">
                     <Box>
                       <Text fw={800}>{item.nm}</Text>
@@ -777,10 +853,12 @@ export default function App() {
                     <Text fw={800} className="mono">{fmt(item.amt)}</Text>
                   </Group>
                 </UniformCard>
+                </SwipeRow>
               ))}
-              <SectionHeader label="Caja" title="Gastos extra" />
+              <SectionHeader label="Caja" title="Gastos extra" action={<ActionIcon size="xl" radius="xl" onClick={() => extraModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.extras.map(item => (
-                <UniformCard key={item.id}>
+                <SwipeRow key={item.id} onDelete={() => removeListItem('extras', item.id)}>
+                <UniformCard onClick={() => { setExtraDraft(item); extraModalHandlers.open(); }}>
                   <Group justify="space-between">
                     <Box>
                       <Text fw={800}>{item.nm}</Text>
@@ -789,10 +867,12 @@ export default function App() {
                     <Text fw={800} className="mono">{fmt(item.amt)}</Text>
                   </Group>
                 </UniformCard>
+                </SwipeRow>
               ))}
-              <SectionHeader label="Calendario" title="Pagos fijos" />
+              <SectionHeader label="Calendario" title="Pagos fijos" action={<ActionIcon size="xl" radius="xl" onClick={() => fixedModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.fixed.map(item => (
-                <UniformCard key={item.id}>
+                <SwipeRow key={item.id} onDelete={() => removeListItem('fixed', item.id)}>
+                <UniformCard onClick={() => { setFixedDraft(item); fixedModalHandlers.open(); }}>
                   <Group justify="space-between">
                     <Box>
                       <Text fw={800}>{item.nm}</Text>
@@ -801,6 +881,7 @@ export default function App() {
                     <Text fw={800} className="mono">{fmt(item.amt)}</Text>
                   </Group>
                 </UniformCard>
+                </SwipeRow>
               ))}
             </>
           )}
@@ -915,6 +996,59 @@ export default function App() {
           <TextInput label="Fecha objetivo" type="date" value={savingDraft.due} onChange={event => setSavingDraft(current => ({ ...current, due: event.currentTarget.value }))} />
           <NumberInput label="Aporte mensual" hideControls thousandSeparator="," value={savingDraft.monthly} onChange={value => setSavingDraft(current => ({ ...current, monthly: Number(value) || 0 }))} />
           <Button onClick={saveSaving}>Guardar ahorro</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={accountModalOpened} onClose={accountModalHandlers.close} title="Cuenta" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={accountDraft.nm} onChange={event => setAccountDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <PickerField label="Tipo" value={accountDraft.type} placeholder="Tipo" options={['Bancaria', 'SINPE', 'Efectivo', 'Tarjeta', 'Inversión']} onChange={value => setAccountDraft(current => ({ ...current, type: value }))} />
+          <PickerField label="Moneda" value={accountDraft.currency} placeholder="Moneda" options={['CRC', 'USD']} onChange={value => setAccountDraft(current => ({ ...current, currency: value }))} />
+          <NumberInput label="Saldo" hideControls thousandSeparator="," value={accountDraft.balance} onChange={value => setAccountDraft(current => ({ ...current, balance: Number(value) || 0 }))} />
+          <Button onClick={saveAccount}>Guardar cuenta</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={debtModalOpened} onClose={debtModalHandlers.close} title="Deuda o préstamo" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={debtDraft.nm} onChange={event => setDebtDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <PickerField label="Tipo" value={debtDraft.type} placeholder="Tipo" options={['Consumo', 'Vehículo', 'Hipoteca', 'Personal']} onChange={value => setDebtDraft(current => ({ ...current, type: value }))} />
+          <NumberInput label="Saldo pendiente" hideControls thousandSeparator="," value={debtDraft.rem} onChange={value => setDebtDraft(current => ({ ...current, rem: Number(value) || 0 }))} />
+          <NumberInput label="Cuota mensual" hideControls thousandSeparator="," value={debtDraft.payment} onChange={value => setDebtDraft(current => ({ ...current, payment: Number(value) || 0 }))} />
+          <NumberInput label="Tasa" hideControls value={debtDraft.rate} onChange={value => setDebtDraft(current => ({ ...current, rate: Number(value) || 0 }))} />
+          <Button onClick={saveDebt}>Guardar deuda</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={investmentModalOpened} onClose={investmentModalHandlers.close} title="Inversión" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={investmentDraft.nm} onChange={event => setInvestmentDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <NumberInput label="Aporte" hideControls thousandSeparator="," value={investmentDraft.invested} onChange={value => setInvestmentDraft(current => ({ ...current, invested: Number(value) || 0 }))} />
+          <NumberInput label="Valor actual" hideControls thousandSeparator="," value={investmentDraft.current} onChange={value => setInvestmentDraft(current => ({ ...current, current: Number(value) || 0 }))} />
+          <PickerField label="Riesgo" value={investmentDraft.risk} placeholder="Riesgo" options={['Bajo', 'Medio', 'Alto']} onChange={value => setInvestmentDraft(current => ({ ...current, risk: value }))} />
+          <Button onClick={saveInvestment}>Guardar inversión</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={fixedModalOpened} onClose={fixedModalHandlers.close} title="Pago fijo" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={fixedDraft.nm} onChange={event => setFixedDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <NumberInput label="Monto" hideControls thousandSeparator="," value={fixedDraft.amt} onChange={value => setFixedDraft(current => ({ ...current, amt: Number(value) || 0 }))} />
+          <NumberInput label="Día de pago" hideControls value={fixedDraft.day} onChange={value => setFixedDraft(current => ({ ...current, day: Number(value) || 0 }))} />
+          <PickerField label="Categoría" value={fixedDraft.cat} placeholder="Categoría" options={EXPENSE_CATEGORIES} onChange={value => setFixedDraft(current => ({ ...current, cat: value }))} />
+          <Button onClick={saveFixed}>Guardar pago fijo</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={extraModalOpened} onClose={extraModalHandlers.close} title="Gasto extra" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={extraDraft.nm} onChange={event => setExtraDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <NumberInput label="Monto" hideControls thousandSeparator="," value={extraDraft.amt} onChange={value => setExtraDraft(current => ({ ...current, amt: Number(value) || 0 }))} />
+          <PickerField label="Categoría" value={extraDraft.cat} placeholder="Categoría" options={EXPENSE_CATEGORIES} onChange={value => setExtraDraft(current => ({ ...current, cat: value }))} />
+          <Button onClick={saveExtra}>Guardar gasto extra</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={platformModalOpened} onClose={platformModalHandlers.close} title="Plataforma digital" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={platformDraft.nm} onChange={event => setPlatformDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <NumberInput label="Monto" hideControls thousandSeparator="," value={platformDraft.amt} onChange={value => setPlatformDraft(current => ({ ...current, amt: Number(value) || 0 }))} />
+          <NumberInput label="Día de cobro" hideControls value={platformDraft.due} onChange={value => setPlatformDraft(current => ({ ...current, due: Number(value) || 0 }))} />
+          <Button onClick={savePlatform}>Guardar plataforma</Button>
         </Stack>
       </Modal>
     </Box>
