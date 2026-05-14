@@ -1,0 +1,50 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+:root {
+  font-family: Sora, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: light-dark(#f4f7fb, #05060a);
+}
+
+.app-shell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top, light-dark(rgba(110, 166, 255, 0.22), rgba(87, 177, 255, 0.18)), transparent 28%),
+    linear-gradient(180deg, light-dark(#f8fbff, #06070b), light-dark(#edf2f8, #05060a));
+}
+
+.grid-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .34;
+  background-image:
+    linear-gradient(light-dark(rgba(65, 93, 140, 0.08), rgba(120, 160, 255, 0.08)) 1px, transparent 1px),
+    linear-gradient(90deg, light-dark(rgba(65, 93, 140, 0.08), rgba(120, 160, 255, 0.08)) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.85), transparent 92%);
+}
+
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
