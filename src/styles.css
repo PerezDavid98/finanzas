@@ -55,6 +55,12 @@ body {
   width: 100%;
 }
 
+.swipeable-list-item {
+  border-radius: 24px;
+  overflow: hidden;
+  width: 100%;
+}
+
 .uniform-card {
   min-height: 142px;
   width: 100%;
@@ -64,6 +70,7 @@ body {
 .swipe-delete {
   height: 100%;
   min-height: 140px;
+  width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,6 +88,7 @@ body {
 .swipeable-list-item__content {
   border-radius: 24px;
   width: 100%;
+  overflow: hidden;
 }
 
 .swipeable-list .swipeable-list-item {
