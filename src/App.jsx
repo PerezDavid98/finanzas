@@ -72,6 +72,14 @@ const EXPENSE_CATEGORIES = ['Alimentación', 'Transporte', 'Servicios', 'Entrete
 const METHODS = ['Efectivo', 'Débito', 'Crédito', 'Transferencia', 'SINPE', 'Domiciliación'];
 
 const DEFAULT_DATA = {
+  profile: {
+    primaryCurrency: 'CRC',
+    secondaryCurrency: 'USD',
+    exchangeRate: 512.4,
+    exchangeMode: 'Manual',
+    owner: 'Titular principal',
+    dependents: 2
+  },
   tx: [
     { id: 1, dt: '2026-05-01', tp: 'in', cat: 'Salario', desc: 'Salario mayo', amt: 850000, met: 'Transferencia', cardId: null },
     { id: 2, dt: '2026-05-03', tp: 'out', cat: 'Alimentación', desc: 'Super semanal', amt: 45000, met: 'Débito', cardId: null },
@@ -107,6 +115,20 @@ const DEFAULT_DATA = {
     { id: 1, nm: 'Netflix', amt: 6990, due: 12 },
     { id: 2, nm: 'Spotify', amt: 4234, due: 8 },
     { id: 3, nm: 'GitHub', amt: 20296, due: 15 }
+  ],
+  accounts: [
+    { id: 1, nm: 'BAC Planilla', type: 'Bancaria', currency: 'CRC', balance: 934500 },
+    { id: 2, nm: 'BCR Ahorros USD', type: 'Bancaria', currency: 'USD', balance: 820 },
+    { id: 3, nm: 'SINPE Movil', type: 'SINPE', currency: 'CRC', balance: 124000 },
+    { id: 4, nm: 'Caja chica', type: 'Efectivo', currency: 'CRC', balance: 45000 }
+  ],
+  debts: [
+    { id: 1, nm: 'Préstamo auto', rem: 3250000, payment: 118000, rate: 13.5, type: 'Vehículo' },
+    { id: 2, nm: 'Crédito personal', rem: 840000, payment: 67000, rate: 18.2, type: 'Consumo' }
+  ],
+  investments: [
+    { id: 1, nm: 'Fondo de inversión', invested: 1200000, current: 1285000, risk: 'Medio' },
+    { id: 2, nm: 'Certificado a plazo', invested: 900000, current: 972000, risk: 'Bajo' }
   ]
 };
 
@@ -281,6 +303,10 @@ export default function App() {
   const balance = income - expenses;
   const savingsTotal = data.savings.reduce((sum, item) => sum + item.current, 0);
   const generalBalance = data.tx.reduce((sum, item) => sum + (item.tp === 'in' ? item.amt : -item.amt), 0);
+  const debtTotal = data.debts.reduce((sum, item) => sum + item.rem, 0) + data.cards.reduce((sum, item) => sum + item.balance, 0);
+  const investmentsTotal = data.investments.reduce((sum, item) => sum + item.current, 0);
+  const accountTotal = data.accounts.reduce((sum, item) => sum + (item.currency === 'USD' ? item.balance * data.profile.exchangeRate : item.balance), 0);
+  const netWorth = accountTotal + investmentsTotal + savingsTotal - debtTotal;
 
   const trend = useMemo(() => {
     return Array.from({ length: 6 }).map((_, index) => {
@@ -445,6 +471,12 @@ export default function App() {
       value: fmt((trend.reduce((sum, item) => sum + item.Ingresos, 0) - trend.reduce((sum, item) => sum + item.Gastos, 0)) / Math.max(trend.length, 1)),
       sub: 'Mensual estimado',
       color: 'blue'
+    },
+    {
+      label: 'Patrimonio',
+      value: fmt(netWorth),
+      sub: 'Activos menos deudas',
+      color: netWorth >= 0 ? 'teal' : 'red'
     }
   ];
 
@@ -547,6 +579,35 @@ export default function App() {
               </Card>
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <UniformCard>
+                  <Text size="xs" fw={800} c="dimmed" tt="uppercase">Perfil financiero base</Text>
+                  <Text fw={800} mt="xs">{data.profile.owner}</Text>
+                  <Text size="sm" c="dimmed" mt={4}>Moneda principal {data.profile.primaryCurrency} · secundaria {data.profile.secondaryCurrency}</Text>
+                  <Text size="sm" c="dimmed">Tipo de cambio {data.profile.exchangeMode}: {data.profile.exchangeRate}</Text>
+                  <Text size="sm" c="dimmed">Dependientes: {data.profile.dependents}</Text>
+                </UniformCard>
+                <UniformCard>
+                  <Text size="xs" fw={800} c="dimmed" tt="uppercase">Reporte rápido</Text>
+                  <Text fw={800} fz={28} className="mono" c={netWorth >= 0 ? 'teal' : 'red'} mt="xs">{fmt(netWorth)}</Text>
+                  <Text size="sm" c="dimmed">Patrimonio estimado</Text>
+                  <Text size="sm" c="dimmed" mt={8}>Cuentas: {fmt(accountTotal)} · Inversiones: {fmt(investmentsTotal)}</Text>
+                </UniformCard>
+              </SimpleGrid>
+
+              <SectionHeader label="Cuentas" title="Posición por origen" />
+              {data.accounts.map(account => (
+                <UniformCard key={account.id}>
+                  <Group justify="space-between">
+                    <Box>
+                      <Text fw={800}>{account.nm}</Text>
+                      <Text size="sm" c="dimmed">{account.type} · {account.currency}</Text>
+                    </Box>
+                    <Text fw={800} className="mono">{account.currency === 'USD' ? `$${account.balance.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : fmt(account.balance)}</Text>
+                  </Group>
+                </UniformCard>
+              ))}
+
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
                 <StatCard label="Ingresos" value={fmt(income)} sub="Toca para ver movimientos" icon={IconWallet} color="green" onClick={() => setTab('tx')} />
                 <StatCard label="Gastos" value={fmt(expenses)} sub={topCategory ? `Mayor fuga: ${topCategory[0]}` : 'Toca para ver presupuestos'} icon={IconReceipt2} color="red" onClick={() => setTab('budgets')} />
                 <StatCard label="Balance" value={fmt(balance)} sub="Toca para abrir historial" icon={IconArrowsExchange} color={balance >= 0 ? 'blue' : 'red'} onClick={() => setTab('hist')} />
@@ -615,6 +676,19 @@ export default function App() {
                   </UniformCard>
                 </SwipeRow>
               ))}
+              <SectionHeader label="Crédito" title="Deudas y préstamos" />
+              {data.debts.map(item => (
+                <UniformCard key={item.id}>
+                  <Group justify="space-between" align="start">
+                    <Box>
+                      <Text fw={800}>{item.nm}</Text>
+                      <Text size="sm" c="dimmed">{item.type} · tasa {item.rate}%</Text>
+                    </Box>
+                    <Text fw={800} className="mono">{fmt(item.rem)}</Text>
+                  </Group>
+                  <Text mt="md" size="sm" c="dimmed">Cuota mensual estimada: {fmt(item.payment)}</Text>
+                </UniformCard>
+              ))}
             </>
           )}
 
@@ -658,6 +732,19 @@ export default function App() {
                     <Text mt="sm" size="sm" c="dimmed">Aporte sugerido mensual: {fmt(goal.monthly)}</Text>
                   </UniformCard>
                 </SwipeRow>
+              ))}
+              <SectionHeader label="Activos" title="Inversiones" />
+              {data.investments.map(item => (
+                <UniformCard key={item.id}>
+                  <Group justify="space-between" align="start">
+                    <Box>
+                      <Text fw={800}>{item.nm}</Text>
+                      <Text size="sm" c="dimmed">Riesgo {item.risk}</Text>
+                    </Box>
+                    <Text fw={800} className="mono">{fmt(item.current)}</Text>
+                  </Group>
+                  <Text mt="md" size="sm" c="dimmed">Aporte total: {fmt(item.invested)} · rendimiento: {fmt(item.current - item.invested)}</Text>
+                </UniformCard>
               ))}
             </>
           )}
@@ -754,6 +841,18 @@ export default function App() {
                     <Text size="sm" c="dimmed" mt={4}>{item.sub}</Text>
                   </Card>
                 ))}
+              </SimpleGrid>
+              <SimpleGrid cols={{ base: 1, sm: 2 }}>
+                <UniformCard>
+                  <Text size="xs" fw={800} c="dimmed" tt="uppercase">Flujo de caja mensual</Text>
+                  <Text fw={800} fz={28} className="mono" c={balance >= 0 ? 'green' : 'red'} mt="xs">{fmt(balance)}</Text>
+                  <Text size="sm" c="dimmed">Ingresos menos gastos del mes actual</Text>
+                </UniformCard>
+                <UniformCard>
+                  <Text size="xs" fw={800} c="dimmed" tt="uppercase">Deudas activas</Text>
+                  <Text fw={800} fz={28} className="mono" c="orange" mt="xs">{fmt(debtTotal)}</Text>
+                  <Text size="sm" c="dimmed">Tarjetas y préstamos pendientes</Text>
+                </UniformCard>
               </SimpleGrid>
               <Divider label="Todos los movimientos" labelPosition="center" />
               {renderHistoryList()}
