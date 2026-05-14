@@ -294,16 +294,20 @@ export default function App() {
   const [fixedModalOpened, fixedModalHandlers] = useDisclosure(false);
   const [extraModalOpened, extraModalHandlers] = useDisclosure(false);
   const [platformModalOpened, platformModalHandlers] = useDisclosure(false);
+  const [shoppingModalOpened, shoppingModalHandlers] = useDisclosure(false);
+  const [profileModalOpened, profileModalHandlers] = useDisclosure(false);
   const [draft, setDraft] = useState({ id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
   const [budgetDraft, setBudgetDraft] = useState({ category: 'Alimentación', amount: 0 });
-  const [cardDraft, setCardDraft] = useState({ nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
-  const [savingDraft, setSavingDraft] = useState({ nm: '', target: 0, current: 0, due: '', monthly: 0 });
+  const [cardDraft, setCardDraft] = useState({ id: null, nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
+  const [savingDraft, setSavingDraft] = useState({ id: null, nm: '', target: 0, current: 0, due: '', monthly: 0 });
   const [accountDraft, setAccountDraft] = useState({ id: null, nm: '', type: 'Bancaria', currency: 'CRC', balance: 0 });
   const [debtDraft, setDebtDraft] = useState({ id: null, nm: '', rem: 0, payment: 0, rate: 0, type: 'Consumo' });
   const [investmentDraft, setInvestmentDraft] = useState({ id: null, nm: '', invested: 0, current: 0, risk: 'Medio' });
   const [fixedDraft, setFixedDraft] = useState({ id: null, nm: '', amt: 0, day: 1, cat: 'Servicios' });
   const [extraDraft, setExtraDraft] = useState({ id: null, nm: '', amt: 0, cat: 'Otros' });
   const [platformDraft, setPlatformDraft] = useState({ id: null, nm: '', amt: 0, due: 1 });
+  const [shoppingDraft, setShoppingDraft] = useState({ id: null, nm: '', cat: 'Alimentación', price: 0, freq: 'Mensual', last: '' });
+  const [profileDraft, setProfileDraft] = useState(DEFAULT_DATA.profile);
   const [currentMonth, setCurrentMonth] = useState(() => {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() };
@@ -414,6 +418,7 @@ export default function App() {
         [budgetDraft.category]: Number(budgetDraft.amount)
       }
     }));
+    setBudgetDraft({ category: 'Alimentación', amount: 0 });
     budgetModalHandlers.close();
   };
 
@@ -421,11 +426,14 @@ export default function App() {
     if (!cardDraft.nm || !cardDraft.limit) {
       return;
     }
-    setData(current => ({
-      ...current,
-      cards: [...current.cards, { id: newId(), ...cardDraft }]
-    }));
-    setCardDraft({ nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
+    setData(current => {
+      const nextCard = cardDraft.id ? cardDraft : { ...cardDraft, id: newId() };
+      return {
+        ...current,
+        cards: cardDraft.id ? current.cards.map(card => card.id === cardDraft.id ? nextCard : card) : [...current.cards, nextCard]
+      };
+    });
+    setCardDraft({ id: null, nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
     cardModalHandlers.close();
   };
 
@@ -433,12 +441,29 @@ export default function App() {
     if (!savingDraft.nm || !savingDraft.target) {
       return;
     }
-    setData(current => ({
-      ...current,
-      savings: [...current.savings, { id: newId(), ...savingDraft }]
-    }));
-    setSavingDraft({ nm: '', target: 0, current: 0, due: '', monthly: 0 });
+    setData(current => {
+      const nextSaving = savingDraft.id ? savingDraft : { ...savingDraft, id: newId() };
+      return {
+        ...current,
+        savings: savingDraft.id ? current.savings.map(goal => goal.id === savingDraft.id ? nextSaving : goal) : [...current.savings, nextSaving]
+      };
+    });
+    setSavingDraft({ id: null, nm: '', target: 0, current: 0, due: '', monthly: 0 });
     savingModalHandlers.close();
+  };
+
+  const saveShopping = () => {
+    if (!shoppingDraft.nm || !shoppingDraft.price) {
+      return;
+    }
+    upsertListItem('shopping', shoppingDraft);
+    setShoppingDraft({ id: null, nm: '', cat: 'Alimentación', price: 0, freq: 'Mensual', last: '' });
+    shoppingModalHandlers.close();
+  };
+
+  const saveProfile = () => {
+    setData(current => ({ ...current, profile: { ...profileDraft, exchangeRate: Number(profileDraft.exchangeRate) || 0, dependents: Number(profileDraft.dependents) || 0 } }));
+    profileModalHandlers.close();
   };
 
   const saveAccount = () => {
@@ -648,7 +673,7 @@ export default function App() {
               </Card>
 
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <UniformCard>
+                <UniformCard onClick={() => { setProfileDraft(data.profile); profileModalHandlers.open(); }}>
                   <Text size="xs" fw={800} c="dimmed" tt="uppercase">Perfil financiero base</Text>
                   <Text fw={800} mt="xs">{data.profile.owner}</Text>
                   <Text size="sm" c="dimmed" mt={4}>Moneda principal {data.profile.primaryCurrency} · secundaria {data.profile.secondaryCurrency}</Text>
@@ -722,10 +747,10 @@ export default function App() {
 
           {tab === 'cards' && (
             <>
-              <SectionHeader label="BAC" title="Tarjetas" action={<ActionIcon size="xl" radius="xl" onClick={() => cardModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
+              <SectionHeader label="BAC" title="Tarjetas" action={<ActionIcon size="xl" radius="xl" onClick={() => { setCardDraft({ id: null, nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' }); cardModalHandlers.open(); }}><IconPlus size={20} /></ActionIcon>} />
               {data.cards.map(card => (
                 <SwipeRow key={card.id} onDelete={() => removeCard(card.id)}>
-                  <UniformCard style={{ background: 'linear-gradient(135deg, rgba(91,157,255,.18), transparent)' }}>
+                  <UniformCard onClick={() => { setCardDraft(card); cardModalHandlers.open(); }} style={{ background: 'linear-gradient(135deg, rgba(91,157,255,.18), transparent)' }}>
                     <Group justify="space-between" align="start">
                       <Box>
                         <Title order={3}>{card.nm}</Title>
@@ -772,7 +797,7 @@ export default function App() {
                 const spent = monthTx.filter(item => item.tp === 'out' && item.cat === category).reduce((sum, item) => sum + item.amt, 0);
                 return (
                   <SwipeRow key={category} onDelete={() => removeBudget(category)}>
-                    <UniformCard onClick={() => setTab('tx')}>
+                    <UniformCard onClick={() => { setBudgetDraft({ category, amount: budget }); budgetModalHandlers.open(); }}>
                       <Group justify="space-between">
                         <Box>
                           <Text fw={800}>{category}</Text>
@@ -790,10 +815,10 @@ export default function App() {
 
           {tab === 'savings' && (
             <>
-              <SectionHeader label="Sistema" title="Ahorros" action={<ActionIcon size="xl" radius="xl" onClick={() => savingModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
+              <SectionHeader label="Sistema" title="Ahorros" action={<ActionIcon size="xl" radius="xl" onClick={() => { setSavingDraft({ id: null, nm: '', target: 0, current: 0, due: '', monthly: 0 }); savingModalHandlers.open(); }}><IconPlus size={20} /></ActionIcon>} />
               {data.savings.map(goal => (
                 <SwipeRow key={goal.id} onDelete={() => removeSaving(goal.id)}>
-                  <UniformCard>
+                  <UniformCard onClick={() => { setSavingDraft(goal); savingModalHandlers.open(); }}>
                     <Group justify="space-between">
                       <Box>
                         <Text fw={800}>{goal.nm}</Text>
@@ -826,10 +851,10 @@ export default function App() {
 
           {tab === 'shopping' && (
             <>
-              <SectionHeader label="Rutina" title="Compras frecuentes" />
+              <SectionHeader label="Rutina" title="Compras frecuentes" action={<ActionIcon size="xl" radius="xl" onClick={() => { setShoppingDraft({ id: null, nm: '', cat: 'Alimentación', price: 0, freq: 'Mensual', last: '' }); shoppingModalHandlers.open(); }}><IconPlus size={20} /></ActionIcon>} />
               {data.shopping.map(item => (
                 <SwipeRow key={item.id} onDelete={() => removeShopping(item.id)}>
-                  <UniformCard>
+                  <UniformCard onClick={() => { setShoppingDraft(item); shoppingModalHandlers.open(); }}>
                     <Group justify="space-between" align="start">
                       <Box>
                         <Text fw={800}>{item.nm}</Text>
@@ -837,7 +862,7 @@ export default function App() {
                       </Box>
                       <Text fw={800} className="mono">{fmt(item.price)}</Text>
                     </Group>
-                    <Button mt="md" variant="light" leftSection={<IconShoppingBag size={16} />} onClick={() => buyShoppingItem(item)}>Comprar ahora</Button>
+                    <Button mt="md" variant="light" leftSection={<IconShoppingBag size={16} />} onClick={event => { event.stopPropagation(); buyShoppingItem(item); }}>Comprar ahora</Button>
                   </UniformCard>
                 </SwipeRow>
               ))}
@@ -956,7 +981,7 @@ export default function App() {
       </Box>
 
       <TransactionDrawer opened={drawerOpened} onClose={drawerHandlers.close} value={draft} onSave={saveTransaction} onDelete={removeTransaction} cards={data.cards} />
-      <Modal opened={budgetModalOpened} onClose={budgetModalHandlers.close} title="Nuevo presupuesto" centered radius="xl">
+      <Modal opened={budgetModalOpened} onClose={budgetModalHandlers.close} title={Object.prototype.hasOwnProperty.call(data.budgets, budgetDraft.category) ? 'Editar presupuesto' : 'Nuevo presupuesto'} centered radius="xl">
         <Stack>
           <PickerField
             label="Categoría"
@@ -975,7 +1000,7 @@ export default function App() {
           <Button onClick={saveBudget}>Guardar presupuesto</Button>
         </Stack>
       </Modal>
-      <Modal opened={cardModalOpened} onClose={cardModalHandlers.close} title="Nueva tarjeta" centered radius="xl">
+      <Modal opened={cardModalOpened} onClose={cardModalHandlers.close} title={cardDraft.id ? 'Editar tarjeta' : 'Nueva tarjeta'} centered radius="xl">
         <Stack>
           <TextInput label="Nombre" value={cardDraft.nm} onChange={event => setCardDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
           <NumberInput label="Límite" hideControls thousandSeparator="," value={cardDraft.limit} onChange={value => setCardDraft(current => ({ ...current, limit: Number(value) || 0 }))} />
@@ -988,7 +1013,7 @@ export default function App() {
           <Button onClick={saveCard}>Guardar tarjeta</Button>
         </Stack>
       </Modal>
-      <Modal opened={savingModalOpened} onClose={savingModalHandlers.close} title="Nueva meta de ahorro" centered radius="xl">
+      <Modal opened={savingModalOpened} onClose={savingModalHandlers.close} title={savingDraft.id ? 'Editar meta de ahorro' : 'Nueva meta de ahorro'} centered radius="xl">
         <Stack>
           <TextInput label="Nombre" value={savingDraft.nm} onChange={event => setSavingDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
           <NumberInput label="Meta" hideControls thousandSeparator="," value={savingDraft.target} onChange={value => setSavingDraft(current => ({ ...current, target: Number(value) || 0 }))} />
@@ -1049,6 +1074,27 @@ export default function App() {
           <NumberInput label="Monto" hideControls thousandSeparator="," value={platformDraft.amt} onChange={value => setPlatformDraft(current => ({ ...current, amt: Number(value) || 0 }))} />
           <NumberInput label="Día de cobro" hideControls value={platformDraft.due} onChange={value => setPlatformDraft(current => ({ ...current, due: Number(value) || 0 }))} />
           <Button onClick={savePlatform}>Guardar plataforma</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={shoppingModalOpened} onClose={shoppingModalHandlers.close} title={shoppingDraft.id ? 'Editar compra frecuente' : 'Nueva compra frecuente'} centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={shoppingDraft.nm} onChange={event => setShoppingDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <PickerField label="Categoría" value={shoppingDraft.cat} placeholder="Categoría" options={EXPENSE_CATEGORIES} onChange={value => setShoppingDraft(current => ({ ...current, cat: value }))} />
+          <NumberInput label="Monto" hideControls thousandSeparator="," value={shoppingDraft.price} onChange={value => setShoppingDraft(current => ({ ...current, price: Number(value) || 0 }))} />
+          <PickerField label="Frecuencia" value={shoppingDraft.freq} placeholder="Frecuencia" options={['Semanal', 'Quincenal', 'Mensual', 'Bimestral']} onChange={value => setShoppingDraft(current => ({ ...current, freq: value }))} />
+          <TextInput label="Última compra" type="date" value={shoppingDraft.last} onChange={event => setShoppingDraft(current => ({ ...current, last: event.currentTarget.value }))} />
+          <Button onClick={saveShopping}>Guardar compra</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={profileModalOpened} onClose={profileModalHandlers.close} title="Perfil financiero base" centered radius="xl">
+        <Stack>
+          <TextInput label="Titular" value={profileDraft.owner} onChange={event => setProfileDraft(current => ({ ...current, owner: event.currentTarget.value }))} />
+          <PickerField label="Moneda principal" value={profileDraft.primaryCurrency} placeholder="Moneda" options={['CRC', 'USD']} onChange={value => setProfileDraft(current => ({ ...current, primaryCurrency: value }))} />
+          <PickerField label="Moneda secundaria" value={profileDraft.secondaryCurrency} placeholder="Moneda" options={['USD', 'CRC']} onChange={value => setProfileDraft(current => ({ ...current, secondaryCurrency: value }))} />
+          <PickerField label="Tipo de cambio" value={profileDraft.exchangeMode} placeholder="Modo" options={['Manual', 'Banco', 'Promedio']} onChange={value => setProfileDraft(current => ({ ...current, exchangeMode: value }))} />
+          <NumberInput label="Tipo de cambio actual" hideControls value={profileDraft.exchangeRate} onChange={value => setProfileDraft(current => ({ ...current, exchangeRate: Number(value) || 0 }))} />
+          <NumberInput label="Dependientes" hideControls value={profileDraft.dependents} onChange={value => setProfileDraft(current => ({ ...current, dependents: Number(value) || 0 }))} />
+          <Button onClick={saveProfile}>Guardar perfil</Button>
         </Stack>
       </Modal>
     </Box>
