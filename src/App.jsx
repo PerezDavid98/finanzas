@@ -17,6 +17,7 @@ import {
   SimpleGrid,
   Stack,
   Switch,
+  Tabs,
   Text,
   TextInput,
   ThemeIcon,
@@ -72,6 +73,10 @@ const EXPENSE_CATEGORIES = ['Alimentación', 'Transporte', 'Servicios', 'Entrete
 const METHODS = ['Efectivo', 'Débito', 'Crédito', 'Transferencia', 'SINPE', 'Domiciliación'];
 
 const DEFAULT_DATA = {
+  categories: {
+    income: ['Salario', 'Freelance', 'Inversiones', 'Negocio', 'Otros ingresos'],
+    expense: ['Alimentación', 'Transporte', 'Servicios', 'Entretenimiento', 'Salud', 'Ropa', 'Alquiler', 'Educación', 'Deudas', 'Ahorro', 'Otros']
+  },
   profile: {
     primaryCurrency: 'CRC',
     secondaryCurrency: 'USD',
@@ -249,7 +254,7 @@ function PickerField({ label, value, placeholder, options, onChange }) {
   );
 }
 
-function TransactionDrawer({ opened, onClose, value, onSave, onDelete, cards }) {
+function TransactionDrawer({ opened, onClose, value, onSave, onDelete, cards, incomeCategories, expenseCategories }) {
   const [form, setForm] = useState(value);
 
   React.useEffect(() => {
@@ -259,9 +264,9 @@ function TransactionDrawer({ opened, onClose, value, onSave, onDelete, cards }) 
   return (
     <Drawer opened={opened} onClose={onClose} position="bottom" size="78%" radius="xl" title={<Title order={3}>{form.id ? 'Editar movimiento' : 'Nuevo movimiento'}</Title>} styles={{ body: { paddingBottom: 110 } }}>
       <Stack pb={90}>
-        <SegmentedControl fullWidth value={form.tp} onChange={tp => setForm(current => ({ ...current, tp, cat: tp === 'in' ? 'Salario' : 'Alimentación' }))} data={[{ label: 'Gasto', value: 'out' }, { label: 'Ingreso', value: 'in' }]} />
+        <SegmentedControl fullWidth value={form.tp} onChange={tp => setForm(current => ({ ...current, tp, cat: (tp === 'in' ? incomeCategories : expenseCategories)[0] || '' }))} data={[{ label: 'Gasto', value: 'out' }, { label: 'Ingreso', value: 'in' }]} />
         <TextInput type="date" label="Fecha" value={form.dt} onChange={event => setForm(current => ({ ...current, dt: event.currentTarget.value }))} />
-        <PickerField label="Categoría" placeholder="Selecciona categoría" options={(form.tp === 'in' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(item => ({ value: item, label: item }))} value={form.cat} onChange={cat => setForm(current => ({ ...current, cat }))} />
+        <PickerField label="Categoría" placeholder="Selecciona categoría" options={(form.tp === 'in' ? incomeCategories : expenseCategories).map(item => ({ value: item, label: item }))} value={form.cat} onChange={cat => setForm(current => ({ ...current, cat }))} />
         <TextInput label="Descripción" value={form.desc} onChange={event => setForm(current => ({ ...current, desc: event.currentTarget.value }))} />
         <NumberInput label="Monto" hideControls thousandSeparator="," value={form.amt} onChange={amt => setForm(current => ({ ...current, amt: Number(amt) || 0 }))} />
         <PickerField label="Método" placeholder="Selecciona método" options={METHODS.map(item => ({ value: item, label: item }))} value={form.met} onChange={met => setForm(current => ({ ...current, met, cardId: met === 'Crédito' ? current.cardId : null }))} />
@@ -296,6 +301,7 @@ export default function App() {
   const [platformModalOpened, platformModalHandlers] = useDisclosure(false);
   const [shoppingModalOpened, shoppingModalHandlers] = useDisclosure(false);
   const [profileModalOpened, profileModalHandlers] = useDisclosure(false);
+  const [categoryModalOpened, categoryModalHandlers] = useDisclosure(false);
   const [draft, setDraft] = useState({ id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
   const [budgetDraft, setBudgetDraft] = useState({ category: 'Alimentación', amount: 0 });
   const [cardDraft, setCardDraft] = useState({ id: null, nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
@@ -308,12 +314,16 @@ export default function App() {
   const [platformDraft, setPlatformDraft] = useState({ id: null, nm: '', amt: 0, due: 1 });
   const [shoppingDraft, setShoppingDraft] = useState({ id: null, nm: '', cat: 'Alimentación', price: 0, freq: 'Mensual', last: '' });
   const [profileDraft, setProfileDraft] = useState(DEFAULT_DATA.profile);
+  const [categoryDraft, setCategoryDraft] = useState({ type: 'expense', name: '' });
+  const [txFilters, setTxFilters] = useState({ query: '', type: 'all', category: 'Todas', method: 'Todos' });
   const [currentMonth, setCurrentMonth] = useState(() => {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() };
   });
 
   const monthTx = useMemo(() => monthFilter(data.tx, currentMonth.year, currentMonth.month), [data.tx, currentMonth]);
+  const incomeCategories = data.categories?.income?.length ? data.categories.income : INCOME_CATEGORIES;
+  const expenseCategories = data.categories?.expense?.length ? data.categories.expense : EXPENSE_CATEGORIES;
   const income = monthTx.filter(item => item.tp === 'in').reduce((sum, item) => sum + item.amt, 0);
   const expenses = monthTx.filter(item => item.tp === 'out').reduce((sum, item) => sum + item.amt, 0);
   const balance = income - expenses;
@@ -340,16 +350,23 @@ export default function App() {
 
   const groupedHistory = useMemo(() => {
     const groups = {};
-    data.tx.forEach(item => {
+    const normalizedQuery = txFilters.query.trim().toLowerCase();
+    data.tx.filter(item => {
+      if (txFilters.type !== 'all' && item.tp !== txFilters.type) return false;
+      if (txFilters.category !== 'Todas' && item.cat !== txFilters.category) return false;
+      if (txFilters.method !== 'Todos' && item.met !== txFilters.method) return false;
+      if (!normalizedQuery) return true;
+      return `${item.desc} ${item.cat} ${item.met}`.toLowerCase().includes(normalizedQuery);
+    }).forEach(item => {
       const key = item.dt.slice(0, 7);
       groups[key] = groups[key] || [];
       groups[key].push(item);
     });
     return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
-  }, [data.tx]);
+  }, [data.tx, txFilters]);
 
   const openNewTransaction = transaction => {
-    setDraft(transaction || { id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
+    setDraft(transaction || { id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: expenseCategories[0] || 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
     drawerHandlers.open();
   };
 
@@ -464,6 +481,47 @@ export default function App() {
   const saveProfile = () => {
     setData(current => ({ ...current, profile: { ...profileDraft, exchangeRate: Number(profileDraft.exchangeRate) || 0, dependents: Number(profileDraft.dependents) || 0 } }));
     profileModalHandlers.close();
+  };
+
+  const saveCategory = () => {
+    const nextName = categoryDraft.name.trim();
+    if (!nextName) return;
+    setData(current => {
+      const currentList = current.categories?.[categoryDraft.type] || [];
+      if (currentList.includes(nextName)) return current;
+      return {
+        ...current,
+        categories: {
+          income: current.categories?.income?.length ? current.categories.income : INCOME_CATEGORIES,
+          expense: current.categories?.expense?.length ? current.categories.expense : EXPENSE_CATEGORIES,
+          [categoryDraft.type]: [...currentList, nextName]
+        }
+      };
+    });
+    setCategoryDraft(current => ({ ...current, name: '' }));
+  };
+
+  const removeCategory = (type, name) => {
+    const categoryList = type === 'income' ? incomeCategories : expenseCategories;
+    if (categoryList.length <= 1) return;
+    setData(current => ({
+      ...current,
+      categories: {
+        income: current.categories?.income?.length ? current.categories.income.filter(item => !(type === 'income' && item === name)) : INCOME_CATEGORIES.filter(item => !(type === 'income' && item === name)),
+        expense: current.categories?.expense?.length ? current.categories.expense.filter(item => !(type === 'expense' && item === name)) : EXPENSE_CATEGORIES.filter(item => !(type === 'expense' && item === name))
+      },
+      budgets: type === 'expense' && Object.prototype.hasOwnProperty.call(current.budgets, name)
+        ? Object.fromEntries(Object.entries(current.budgets).filter(([key]) => key !== name))
+        : current.budgets
+    }));
+    setTxFilters(current => ({
+      ...current,
+      category: current.category === name ? 'Todas' : current.category
+    }));
+  };
+
+  const clearTxFilters = () => {
+    setTxFilters({ query: '', type: 'all', category: 'Todas', method: 'Todos' });
   };
 
   const saveAccount = () => {
@@ -598,6 +656,49 @@ export default function App() {
         </Stack>
       ))}
     </Stack>
+  );
+
+  const renderFilterBar = () => (
+    <Card radius="xl" withBorder p="md">
+      <Stack>
+        <TextInput
+          label="Buscar"
+          placeholder="Descripción, categoría o método"
+          value={txFilters.query}
+          onChange={event => setTxFilters(current => ({ ...current, query: event.currentTarget.value }))}
+        />
+        <SegmentedControl
+          fullWidth
+          value={txFilters.type}
+          onChange={value => setTxFilters(current => ({ ...current, type: value }))}
+          data={[
+            { label: 'Todos', value: 'all' },
+            { label: 'Gastos', value: 'out' },
+            { label: 'Ingresos', value: 'in' }
+          ]}
+        />
+        <SimpleGrid cols={{ base: 1, sm: 2 }}>
+          <PickerField
+            label="Categoría"
+            placeholder="Todas"
+            options={['Todas', ...(txFilters.type === 'in' ? incomeCategories : txFilters.type === 'out' ? expenseCategories : [...expenseCategories, ...incomeCategories])].map(item => ({ value: item, label: item }))}
+            value={txFilters.category}
+            onChange={value => setTxFilters(current => ({ ...current, category: value }))}
+          />
+          <PickerField
+            label="Método"
+            placeholder="Todos"
+            options={['Todos', ...METHODS].map(item => ({ value: item, label: item }))}
+            value={txFilters.method}
+            onChange={value => setTxFilters(current => ({ ...current, method: value }))}
+          />
+        </SimpleGrid>
+        <Group grow>
+          <Button variant="light" onClick={clearTxFilters}>Limpiar filtros</Button>
+          <Button variant="subtle" onClick={() => categoryModalHandlers.open()}>Editar categorías</Button>
+        </Group>
+      </Stack>
+    </Card>
   );
 
   return (
@@ -741,6 +842,7 @@ export default function App() {
           {tab === 'tx' && (
             <>
               <SectionHeader label="Control" title="Movimientos" action={<ActionIcon size="xl" radius="xl" onClick={() => openNewTransaction()}><IconPlus size={20} /></ActionIcon>} />
+              {renderFilterBar()}
               {renderHistoryList()}
             </>
           )}
@@ -792,7 +894,7 @@ export default function App() {
 
           {tab === 'budgets' && (
             <>
-              <SectionHeader label="Control" title="Presupuestos" action={<ActionIcon size="xl" radius="xl" onClick={() => budgetModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
+              <SectionHeader label="Control" title="Presupuestos" action={<Group gap="xs"><ActionIcon size="xl" radius="xl" variant="light" onClick={() => categoryModalHandlers.open()}><IconSelector size={18} /></ActionIcon><ActionIcon size="xl" radius="xl" onClick={() => { setBudgetDraft({ category: expenseCategories[0] || 'Alimentación', amount: 0 }); budgetModalHandlers.open(); }}><IconPlus size={20} /></ActionIcon></Group>} />
               {Object.entries(data.budgets).map(([category, budget]) => {
                 const spent = monthTx.filter(item => item.tp === 'out' && item.cat === category).reduce((sum, item) => sum + item.amt, 0);
                 return (
@@ -851,7 +953,7 @@ export default function App() {
 
           {tab === 'shopping' && (
             <>
-              <SectionHeader label="Rutina" title="Compras frecuentes" action={<ActionIcon size="xl" radius="xl" onClick={() => { setShoppingDraft({ id: null, nm: '', cat: 'Alimentación', price: 0, freq: 'Mensual', last: '' }); shoppingModalHandlers.open(); }}><IconPlus size={20} /></ActionIcon>} />
+              <SectionHeader label="Rutina" title="Compras frecuentes" action={<Group gap="xs"><ActionIcon size="xl" radius="xl" variant="light" onClick={() => categoryModalHandlers.open()}><IconSelector size={18} /></ActionIcon><ActionIcon size="xl" radius="xl" onClick={() => { setShoppingDraft({ id: null, nm: '', cat: expenseCategories[0] || 'Alimentación', price: 0, freq: 'Mensual', last: '' }); shoppingModalHandlers.open(); }}><IconPlus size={20} /></ActionIcon></Group>} />
               {data.shopping.map(item => (
                 <SwipeRow key={item.id} onDelete={() => removeShopping(item.id)}>
                   <UniformCard onClick={() => { setShoppingDraft(item); shoppingModalHandlers.open(); }}>
@@ -913,7 +1015,8 @@ export default function App() {
 
           {tab === 'hist' && (
             <>
-              <SectionHeader label="Predicción" title="Historial" />
+              <SectionHeader label="Predicción" title="Historial" action={<Button variant="subtle" onClick={() => categoryModalHandlers.open()}>Categorías</Button>} />
+              {renderFilterBar()}
               <Card radius="xl" withBorder p="lg">
                 <Box h={220}>
                   <ResponsiveContainer width="100%" height="100%">
@@ -980,13 +1083,13 @@ export default function App() {
         </Paper>
       </Box>
 
-      <TransactionDrawer opened={drawerOpened} onClose={drawerHandlers.close} value={draft} onSave={saveTransaction} onDelete={removeTransaction} cards={data.cards} />
+      <TransactionDrawer opened={drawerOpened} onClose={drawerHandlers.close} value={draft} onSave={saveTransaction} onDelete={removeTransaction} cards={data.cards} incomeCategories={incomeCategories} expenseCategories={expenseCategories} />
       <Modal opened={budgetModalOpened} onClose={budgetModalHandlers.close} title={Object.prototype.hasOwnProperty.call(data.budgets, budgetDraft.category) ? 'Editar presupuesto' : 'Nuevo presupuesto'} centered radius="xl">
         <Stack>
           <PickerField
             label="Categoría"
             placeholder="Selecciona categoría"
-            options={EXPENSE_CATEGORIES.map(item => ({ value: item, label: item }))}
+            options={expenseCategories.map(item => ({ value: item, label: item }))}
             value={budgetDraft.category}
             onChange={category => setBudgetDraft(current => ({ ...current, category }))}
           />
@@ -1056,7 +1159,7 @@ export default function App() {
           <TextInput label="Nombre" value={fixedDraft.nm} onChange={event => setFixedDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
           <NumberInput label="Monto" hideControls thousandSeparator="," value={fixedDraft.amt} onChange={value => setFixedDraft(current => ({ ...current, amt: Number(value) || 0 }))} />
           <NumberInput label="Día de pago" hideControls value={fixedDraft.day} onChange={value => setFixedDraft(current => ({ ...current, day: Number(value) || 0 }))} />
-          <PickerField label="Categoría" value={fixedDraft.cat} placeholder="Categoría" options={EXPENSE_CATEGORIES} onChange={value => setFixedDraft(current => ({ ...current, cat: value }))} />
+          <PickerField label="Categoría" value={fixedDraft.cat} placeholder="Categoría" options={expenseCategories} onChange={value => setFixedDraft(current => ({ ...current, cat: value }))} />
           <Button onClick={saveFixed}>Guardar pago fijo</Button>
         </Stack>
       </Modal>
@@ -1064,7 +1167,7 @@ export default function App() {
         <Stack>
           <TextInput label="Nombre" value={extraDraft.nm} onChange={event => setExtraDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
           <NumberInput label="Monto" hideControls thousandSeparator="," value={extraDraft.amt} onChange={value => setExtraDraft(current => ({ ...current, amt: Number(value) || 0 }))} />
-          <PickerField label="Categoría" value={extraDraft.cat} placeholder="Categoría" options={EXPENSE_CATEGORIES} onChange={value => setExtraDraft(current => ({ ...current, cat: value }))} />
+          <PickerField label="Categoría" value={extraDraft.cat} placeholder="Categoría" options={expenseCategories} onChange={value => setExtraDraft(current => ({ ...current, cat: value }))} />
           <Button onClick={saveExtra}>Guardar gasto extra</Button>
         </Stack>
       </Modal>
@@ -1079,7 +1182,7 @@ export default function App() {
       <Modal opened={shoppingModalOpened} onClose={shoppingModalHandlers.close} title={shoppingDraft.id ? 'Editar compra frecuente' : 'Nueva compra frecuente'} centered radius="xl">
         <Stack>
           <TextInput label="Nombre" value={shoppingDraft.nm} onChange={event => setShoppingDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
-          <PickerField label="Categoría" value={shoppingDraft.cat} placeholder="Categoría" options={EXPENSE_CATEGORIES} onChange={value => setShoppingDraft(current => ({ ...current, cat: value }))} />
+          <PickerField label="Categoría" value={shoppingDraft.cat} placeholder="Categoría" options={expenseCategories} onChange={value => setShoppingDraft(current => ({ ...current, cat: value }))} />
           <NumberInput label="Monto" hideControls thousandSeparator="," value={shoppingDraft.price} onChange={value => setShoppingDraft(current => ({ ...current, price: Number(value) || 0 }))} />
           <PickerField label="Frecuencia" value={shoppingDraft.freq} placeholder="Frecuencia" options={['Semanal', 'Quincenal', 'Mensual', 'Bimestral']} onChange={value => setShoppingDraft(current => ({ ...current, freq: value }))} />
           <TextInput label="Última compra" type="date" value={shoppingDraft.last} onChange={event => setShoppingDraft(current => ({ ...current, last: event.currentTarget.value }))} />
@@ -1095,6 +1198,32 @@ export default function App() {
           <NumberInput label="Tipo de cambio actual" hideControls value={profileDraft.exchangeRate} onChange={value => setProfileDraft(current => ({ ...current, exchangeRate: Number(value) || 0 }))} />
           <NumberInput label="Dependientes" hideControls value={profileDraft.dependents} onChange={value => setProfileDraft(current => ({ ...current, dependents: Number(value) || 0 }))} />
           <Button onClick={saveProfile}>Guardar perfil</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={categoryModalOpened} onClose={categoryModalHandlers.close} title="Categorías editables" centered radius="xl">
+        <Stack>
+          <Tabs value={categoryDraft.type} onChange={value => setCategoryDraft(current => ({ ...current, type: value || 'expense' }))}>
+            <Tabs.List grow>
+              <Tabs.Tab value="expense">Gastos</Tabs.Tab>
+              <Tabs.Tab value="income">Ingresos</Tabs.Tab>
+            </Tabs.List>
+          </Tabs>
+          <Group grow align="end">
+            <TextInput label="Nueva categoría" value={categoryDraft.name} onChange={event => setCategoryDraft(current => ({ ...current, name: event.currentTarget.value }))} />
+            <Button onClick={saveCategory}>Agregar</Button>
+          </Group>
+          <Stack gap="xs">
+            {(categoryDraft.type === 'income' ? incomeCategories : expenseCategories).map(item => (
+              <SwipeRow key={`${categoryDraft.type}-${item}`} onDelete={() => removeCategory(categoryDraft.type, item)}>
+                <UniformCard>
+                  <Group justify="space-between">
+                    <Text fw={700}>{item}</Text>
+                    <Badge variant="light">{categoryDraft.type === 'income' ? 'Ingreso' : 'Gasto'}</Badge>
+                  </Group>
+                </UniformCard>
+              </SwipeRow>
+            ))}
+          </Stack>
         </Stack>
       </Modal>
     </Box>
