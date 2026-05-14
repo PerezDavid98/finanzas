@@ -109,10 +109,10 @@ function SectionHeader({ label, title, action }) {
   );
 }
 
-function StatCard({ label, value, sub, icon, color }) {
+function StatCard({ label, value, sub, icon, color, onClick }) {
   const Icon = icon;
   return (
-    <Card radius="xl" withBorder p="lg" style={{ background: 'light-dark(rgba(255,255,255,.72), rgba(10,15,23,.88))', backdropFilter: 'blur(18px)' }}>
+    <Card radius="xl" withBorder p="lg" onClick={onClick} style={{ background: 'light-dark(rgba(255,255,255,.72), rgba(8,12,20,.92))', backdropFilter: 'blur(18px)', cursor: onClick ? 'pointer' : 'default' }}>
       <Group justify="space-between" mb="xs">
         <Text size="xs" fw={800} c="dimmed" tt="uppercase">{label}</Text>
         <ThemeIcon variant="light" color={color} radius="md"><Icon size={16} /></ThemeIcon>
@@ -125,6 +125,7 @@ function StatCard({ label, value, sub, icon, color }) {
 
 function SwipeRow({ children, onDelete }) {
   const [open, setOpen] = useState(false);
+  const deleteThreshold = -108;
   return (
     <Box pos="relative" style={{ overflow: 'hidden', borderRadius: 24 }}>
       <Paper bg="red.6" pos="absolute" top={0} right={0} h="100%" w={116} radius="xl" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -134,7 +135,15 @@ function SwipeRow({ children, onDelete }) {
         drag="x"
         dragConstraints={{ left: -116, right: 0 }}
         dragElastic={0.03}
-        onDragEnd={(_, info) => setOpen(info.offset.x < -64)}
+        dragMomentum={false}
+        style={{ touchAction: 'pan-y' }}
+        onDragEnd={(_, info) => {
+          if (info.offset.x <= deleteThreshold || info.velocity.x < -700) {
+            onDelete();
+            return;
+          }
+          setOpen(info.offset.x < -56);
+        }}
         animate={{ x: open ? -116 : 0 }}
         transition={{ type: 'spring', stiffness: 420, damping: 34 }}
       >
@@ -191,6 +200,7 @@ export default function App() {
   const expenses = monthTx.filter(item => item.tp === 'out').reduce((sum, item) => sum + item.amt, 0);
   const balance = income - expenses;
   const savingsTotal = data.savings.reduce((sum, item) => sum + item.current, 0);
+  const generalBalance = data.tx.reduce((sum, item) => sum + (item.tp === 'in' ? item.amt : -item.amt), 0);
 
   const trend = useMemo(() => {
     return Array.from({ length: 6 }).map((_, index) => {
@@ -255,6 +265,16 @@ export default function App() {
     return Object.entries(totals).sort((a, b) => b[1] - a[1])[0];
   }, [monthTx]);
 
+  const expenseBreakdown = useMemo(() => {
+    const totals = {};
+    monthTx.filter(item => item.tp === 'out').forEach(item => {
+      totals[item.cat] = (totals[item.cat] || 0) + item.amt;
+    });
+    return Object.entries(totals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+  }, [monthTx]);
+
   const navItems = [
     { key: 'home', label: 'Inicio', icon: IconHome },
     { key: 'tx', label: 'Movs', icon: IconArrowsExchange },
@@ -292,14 +312,51 @@ export default function App() {
                 </Group>
               </Paper>
 
+              <Card radius="xl" withBorder p="lg" style={{ background: 'linear-gradient(180deg, rgba(7, 12, 20, 0.96), rgba(7, 10, 16, 0.88))' }}>
+                <SectionHeader label="Resumen" title="Panorama general" action={<Badge color="blue" variant="light">{currentMonth.year}</Badge>} />
+                <Box h={190} mt="sm">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={trend}>
+                      <CartesianGrid strokeDasharray="4 4" stroke="rgba(148,163,184,.18)" vertical={false} />
+                      <XAxis dataKey="mes" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <YAxis tickFormatter={value => `₡${Math.round(value / 1000)}k`} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+                      <Tooltip formatter={value => fmt(value)} />
+                      <Line type="monotone" dataKey="Ingresos" stroke="#66e3a6" strokeWidth={3} dot={false} />
+                      <Line type="monotone" dataKey="Gastos" stroke="#ff6b86" strokeWidth={3} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </Box>
+                <SimpleGrid cols={2} mt="md">
+                  <Box>
+                    <Text size="xs" c="dimmed" fw={800} tt="uppercase">Balance general</Text>
+                    <Text className="mono" fw={800} fz={28} c={generalBalance >= 0 ? 'blue.4' : 'red.4'}>{fmt(generalBalance)}</Text>
+                  </Box>
+                  <Box>
+                    <Text size="xs" c="dimmed" fw={800} tt="uppercase">Mayor gasto</Text>
+                    <Text fw={700}>{topCategory ? topCategory[0] : 'Sin datos'}</Text>
+                    <Text size="sm" c="dimmed">{topCategory ? fmt(topCategory[1]) : 'Aún no hay egresos'}</Text>
+                  </Box>
+                </SimpleGrid>
+                {expenseBreakdown.length > 0 && (
+                  <Stack gap={8} mt="md">
+                    {expenseBreakdown.map(([category, total]) => (
+                      <Group key={category} justify="space-between">
+                        <Text size="sm" c="dimmed">{category}</Text>
+                        <Text size="sm" fw={700} className="mono">{fmt(total)}</Text>
+                      </Group>
+                    ))}
+                  </Stack>
+                )}
+              </Card>
+
               <SimpleGrid cols={{ base: 1, sm: 2 }}>
-                <StatCard label="Ingresos" value={fmt(income)} sub="Este mes" icon={IconWallet} color="green" />
-                <StatCard label="Gastos" value={fmt(expenses)} sub={topCategory ? `Mayor fuga: ${topCategory[0]}` : 'Sin gastos'} icon={IconReceipt2} color="red" />
-                <StatCard label="Balance" value={fmt(balance)} sub={balance >= 0 ? 'Mes estable' : 'Necesita ajuste'} icon={IconArrowsExchange} color={balance >= 0 ? 'blue' : 'red'} />
-                <StatCard label="Ahorros" value={fmt(savingsTotal)} sub={`${data.savings.length} metas activas`} icon={IconPigMoney} color="teal" />
+                <StatCard label="Ingresos" value={fmt(income)} sub="Toca para ver movimientos" icon={IconWallet} color="green" onClick={() => setTab('tx')} />
+                <StatCard label="Gastos" value={fmt(expenses)} sub={topCategory ? `Mayor fuga: ${topCategory[0]}` : 'Toca para ver presupuestos'} icon={IconReceipt2} color="red" onClick={() => setTab('budgets')} />
+                <StatCard label="Balance" value={fmt(balance)} sub="Toca para abrir historial" icon={IconArrowsExchange} color={balance >= 0 ? 'blue' : 'red'} onClick={() => setTab('hist')} />
+                <StatCard label="Ahorros" value={fmt(savingsTotal)} sub={`${data.savings.length} metas activas`} icon={IconPigMoney} color="teal" onClick={() => setTab('savings')} />
               </SimpleGrid>
 
-              <Card radius="xl" withBorder p="lg">
+              <Card radius="xl" withBorder p="lg" onClick={() => setTab('hist')} style={{ cursor: 'pointer' }}>
                 <SectionHeader label="Radar" title="Tendencia 6 meses" />
                 <Box h={220} mt="sm">
                   <ResponsiveContainer width="100%" height="100%">
@@ -388,7 +445,7 @@ export default function App() {
               {Object.entries(data.budgets).map(([category, budget]) => {
                 const spent = monthTx.filter(item => item.tp === 'out' && item.cat === category).reduce((sum, item) => sum + item.amt, 0);
                 return (
-                  <Card key={category} radius="xl" withBorder>
+                  <Card key={category} radius="xl" withBorder onClick={() => setTab('tx')} style={{ cursor: 'pointer' }}>
                     <Group justify="space-between">
                       <Box>
                         <Text fw={800}>{category}</Text>
