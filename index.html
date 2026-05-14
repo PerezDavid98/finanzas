@@ -60,61 +60,123 @@ const filt=(tx,y,m)=>tx.filter(t=>{const d=new Date(t.dt+"T12:00:00");return d.g
 const uid=()=>Date.now()+Math.random().toString(36).slice(2);
 
 /* ── STORAGE ── */
-const SKEY="finanzas-v5";
+const SKEY="finanzas-v6";
 function loadDB(){
-  try{const r=localStorage.getItem(SKEY);if(r)return JSON.parse(r);}catch{}
+  try{const r=localStorage.getItem(SKEY);if(r){const d=JSON.parse(r);if(!d.cards)d.cards=[];return d;}}catch{}
   return{
     tx:[
-      {id:1,dt:"2026-01-02",tp:"in",cat:"Salario",desc:"Salario enero",amt:820000,met:"Transferencia"},
-      {id:2,dt:"2026-01-03",tp:"out",cat:"Alquiler",desc:"Alquiler enero",amt:250000,met:"Transferencia"},
-      {id:3,dt:"2026-01-05",tp:"out",cat:"Alimentación",desc:"Super semanal",amt:42000,met:"Débito"},
-      {id:4,dt:"2026-01-08",tp:"out",cat:"Servicios",desc:"Luz + Internet",amt:38000,met:"Domiciliación"},
-      {id:5,dt:"2026-01-12",tp:"out",cat:"Transporte",desc:"Gasolina",amt:26000,met:"Débito"},
-      {id:6,dt:"2026-01-20",tp:"out",cat:"Entretenimiento",desc:"Netflix+Spotify",amt:12000,met:"Crédito"},
-      {id:7,dt:"2026-01-25",tp:"out",cat:"Salud",desc:"Farmacia",amt:8500,met:"Efectivo"},
-      {id:10,dt:"2026-02-01",tp:"in",cat:"Salario",desc:"Salario febrero",amt:820000,met:"Transferencia"},
-      {id:11,dt:"2026-02-01",tp:"in",cat:"Freelance",desc:"Logo cliente",amt:80000,met:"SINPE"},
-      {id:12,dt:"2026-02-02",tp:"out",cat:"Alquiler",desc:"Alquiler febrero",amt:250000,met:"Transferencia"},
-      {id:13,dt:"2026-02-05",tp:"out",cat:"Alimentación",desc:"Super semanal",amt:48000,met:"Débito"},
-      {id:14,dt:"2026-02-10",tp:"out",cat:"Servicios",desc:"Luz + Internet",amt:41000,met:"Domiciliación"},
-      {id:15,dt:"2026-02-14",tp:"out",cat:"Entretenimiento",desc:"San Valentín",amt:35000,met:"Crédito"},
-      {id:16,dt:"2026-02-18",tp:"out",cat:"Transporte",desc:"Gasolina",amt:27000,met:"Débito"},
-      {id:20,dt:"2026-03-01",tp:"in",cat:"Salario",desc:"Salario marzo",amt:850000,met:"Transferencia"},
-      {id:21,dt:"2026-03-02",tp:"out",cat:"Alquiler",desc:"Alquiler marzo",amt:250000,met:"Transferencia"},
-      {id:22,dt:"2026-03-04",tp:"out",cat:"Alimentación",desc:"Super semanal",amt:44000,met:"Débito"},
-      {id:23,dt:"2026-03-10",tp:"out",cat:"Servicios",desc:"Luz + Internet",amt:39000,met:"Domiciliación"},
-      {id:24,dt:"2026-03-15",tp:"out",cat:"Transporte",desc:"Gasolina",amt:33000,met:"Débito"},
-      {id:25,dt:"2026-03-20",tp:"out",cat:"Salud",desc:"Consulta médica",amt:25000,met:"Efectivo"},
-      {id:30,dt:"2026-04-01",tp:"in",cat:"Salario",desc:"Salario abril",amt:850000,met:"Transferencia"},
-      {id:31,dt:"2026-04-01",tp:"in",cat:"Freelance",desc:"Diseño web",amt:120000,met:"SINPE"},
-      {id:32,dt:"2026-04-02",tp:"out",cat:"Alquiler",desc:"Alquiler abril",amt:250000,met:"Transferencia"},
-      {id:33,dt:"2026-04-05",tp:"out",cat:"Alimentación",desc:"Super semanal",amt:46000,met:"Débito"},
-      {id:34,dt:"2026-04-08",tp:"out",cat:"Servicios",desc:"Luz + Internet",amt:40000,met:"Domiciliación"},
-      {id:35,dt:"2026-04-15",tp:"out",cat:"Entretenimiento",desc:"Cine y comida",amt:18000,met:"Efectivo"},
-      {id:36,dt:"2026-04-20",tp:"out",cat:"Deudas",desc:"Abono Visa",amt:50000,met:"Transferencia"},
-      {id:40,dt:"2026-05-01",tp:"in",cat:"Salario",desc:"Salario mayo",amt:850000,met:"Transferencia"},
-      {id:41,dt:"2026-05-01",tp:"in",cat:"Freelance",desc:"Proyecto ABC",amt:150000,met:"SINPE"},
-      {id:42,dt:"2026-05-02",tp:"out",cat:"Alquiler",desc:"Alquiler mayo",amt:250000,met:"Transferencia"},
-      {id:43,dt:"2026-05-03",tp:"out",cat:"Alimentación",desc:"Super semanal",amt:45000,met:"Débito"},
-      {id:44,dt:"2026-05-04",tp:"out",cat:"Transporte",desc:"Gasolina",amt:28000,met:"Débito"},
-      {id:45,dt:"2026-05-05",tp:"out",cat:"Servicios",desc:"Luz + Internet",amt:40000,met:"Domiciliación"},
-      {id:46,dt:"2026-05-07",tp:"out",cat:"Salud",desc:"Farmacia",amt:12000,met:"Débito"},
-      {id:47,dt:"2026-05-08",tp:"out",cat:"Entretenimiento",desc:"Netflix+Spotify",amt:12000,met:"Crédito"},
-      {id:48,dt:"2026-05-12",tp:"out",cat:"Alimentación",desc:"Super semanal",amt:38000,met:"Débito"},
+      {id:1,dt:"2025-12-08",tp:"in",cat:"Negocio",desc:"ADELANTE DESARROLLOS",amt:16667,met:"Transferencia"},
+      {id:2,dt:"2025-12-03",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:30000,met:"Transferencia"},
+      {id:3,dt:"2025-12-04",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:148000,met:"Transferencia"},
+      {id:4,dt:"2025-12-11",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:100000,met:"SINPE"},
+      {id:5,dt:"2025-12-13",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:50000,met:"Transferencia"},
+      {id:6,dt:"2025-12-13",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:150000,met:"Transferencia"},
+      {id:7,dt:"2025-12-15",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:446650,met:"Transferencia"},
+      {id:8,dt:"2025-12-15",tp:"in",cat:"Otros ingresos",desc:"PIN-SINPE recibido",amt:200000,met:"SINPE"},
+      {id:9,dt:"2025-12-18",tp:"in",cat:"Otros ingresos",desc:"SINPE MOVIL recibido",amt:100000,met:"SINPE"},
+      {id:10,dt:"2025-12-19",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:200000,met:"Transferencia"},
+      {id:11,dt:"2025-12-22",tp:"in",cat:"Otros ingresos",desc:"SINPE MOVIL recibido",amt:123000,met:"SINPE"},
+      {id:12,dt:"2025-12-24",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:42000,met:"Transferencia"},
+      {id:13,dt:"2025-12-30",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:438850,met:"Transferencia"},
+      {id:14,dt:"2025-12-01",tp:"out",cat:"Entretenimiento",desc:"GITHUB, INC.",amt:21457,met:"Crédito"},
+      {id:15,dt:"2025-12-01",tp:"out",cat:"Alimentación",desc:"MAXIPALI AGUA CALIENTE",amt:70940,met:"Débito"},
+      {id:16,dt:"2025-12-04",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:3467,met:"Crédito"},
+      {id:17,dt:"2025-12-06",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:29200,met:"Débito"},
+      {id:18,dt:"2025-12-07",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:19470,met:"Débito"},
+      {id:19,dt:"2025-12-13",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:3019,met:"Crédito"},
+      {id:20,dt:"2025-12-16",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:63914,met:"Débito"},
+      {id:21,dt:"2025-12-22",tp:"out",cat:"Transporte",desc:"DIDI",amt:2630,met:"Crédito"},
+      {id:22,dt:"2025-12-24",tp:"out",cat:"Transporte",desc:"DIDI",amt:8290,met:"Crédito"},
+      {id:23,dt:"2025-12-24",tp:"out",cat:"Servicios",desc:"Recarga ICE KOLBI",amt:2000,met:"Débito"},
+      {id:24,dt:"2025-12-28",tp:"out",cat:"Entretenimiento",desc:"Spotify",amt:4540,met:"Crédito"},
+      {id:25,dt:"2025-12-28",tp:"out",cat:"Alimentación",desc:"SUPERMERCADO LILY",amt:26175,met:"Débito"},
+      {id:26,dt:"2026-01-02",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:280000,met:"Transferencia"},
+      {id:27,dt:"2026-01-15",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:445850,met:"Transferencia"},
+      {id:28,dt:"2026-01-15",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:250000,met:"Transferencia"},
+      {id:29,dt:"2026-01-19",tp:"in",cat:"Otros ingresos",desc:"SINPE MOVIL recibido",amt:60000,met:"SINPE"},
+      {id:30,dt:"2026-01-19",tp:"in",cat:"Otros ingresos",desc:"SINPE MOVIL recibido",amt:50000,met:"SINPE"},
+      {id:31,dt:"2026-01-27",tp:"in",cat:"Otros ingresos",desc:"DTR SINPE recibido",amt:90000,met:"SINPE"},
+      {id:32,dt:"2026-01-30",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:437650,met:"Transferencia"},
+      {id:33,dt:"2026-01-30",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:284000,met:"Transferencia"},
+      {id:34,dt:"2026-01-30",tp:"in",cat:"Otros ingresos",desc:"PIN-SINPE recibido",amt:279000,met:"SINPE"},
+      {id:35,dt:"2026-01-01",tp:"out",cat:"Entretenimiento",desc:"GITHUB, INC.",amt:21715,met:"Crédito"},
+      {id:36,dt:"2026-01-03",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:54860,met:"Débito"},
+      {id:37,dt:"2026-01-04",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:3530,met:"Crédito"},
+      {id:38,dt:"2026-01-10",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:39512,met:"Débito"},
+      {id:39,dt:"2026-01-15",tp:"out",cat:"Transporte",desc:"ECONOMY CAR RENTALS",amt:112751,met:"Crédito"},
+      {id:40,dt:"2026-01-17",tp:"out",cat:"Alimentación",desc:"WALMART LIBERIA",amt:38880,met:"Débito"},
+      {id:41,dt:"2026-01-28",tp:"out",cat:"Entretenimiento",desc:"Spotify",amt:4504,met:"Crédito"},
+      {id:42,dt:"2026-01-28",tp:"out",cat:"Salud",desc:"FARMACIA LA BOMBA",amt:3897,met:"Débito"},
+      {id:43,dt:"2026-01-30",tp:"out",cat:"Servicios",desc:"Pago Liberty Movil",amt:24571,met:"Débito"},
+      {id:44,dt:"2026-01-30",tp:"out",cat:"Servicios",desc:"Pago TIGO",amt:22787,met:"Débito"},
+      {id:45,dt:"2026-02-06",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:150000,met:"Transferencia"},
+      {id:46,dt:"2026-02-13",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:425850,met:"Transferencia"},
+      {id:47,dt:"2026-02-13",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:275000,met:"Transferencia"},
+      {id:48,dt:"2026-02-17",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:40000,met:"Transferencia"},
+      {id:49,dt:"2026-02-27",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:417650,met:"Transferencia"},
+      {id:50,dt:"2026-02-27",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:165000,met:"Transferencia"},
+      {id:51,dt:"2026-01-30",tp:"out",cat:"Alimentación",desc:"MAXIPALI AGUA CALIENTE",amt:76542,met:"Débito"},
+      {id:52,dt:"2026-02-01",tp:"out",cat:"Entretenimiento",desc:"GITHUB, INC.",amt:21586,met:"Crédito"},
+      {id:53,dt:"2026-02-01",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:22970,met:"Débito"},
+      {id:54,dt:"2026-02-03",tp:"out",cat:"Entretenimiento",desc:"Adobe",amt:12595,met:"Crédito"},
+      {id:55,dt:"2026-02-06",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:3488,met:"Crédito"},
+      {id:56,dt:"2026-02-07",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:15604,met:"Débito"},
+      {id:57,dt:"2026-02-08",tp:"out",cat:"Salud",desc:"FARMACIA LA BOMBA",amt:5340,met:"Débito"},
+      {id:58,dt:"2026-02-12",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:2923,met:"Crédito"},
+      {id:59,dt:"2026-02-13",tp:"out",cat:"Transporte",desc:"DIDI",amt:6520,met:"Crédito"},
+      {id:60,dt:"2026-02-13",tp:"out",cat:"Transporte",desc:"DIDI",amt:9372,met:"Crédito"},
+      {id:61,dt:"2026-02-22",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:1438,met:"Crédito"},
+      {id:62,dt:"2026-02-27",tp:"out",cat:"Entretenimiento",desc:"Spotify",amt:4288,met:"Crédito"},
+      {id:63,dt:"2026-02-27",tp:"out",cat:"Servicios",desc:"Pago Liberty Movil",amt:300,met:"Débito"},
+      {id:64,dt:"2026-02-27",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:85031,met:"Débito"},
+      {id:65,dt:"2026-02-14",tp:"out",cat:"Servicios",desc:"Recarga CLARO PRE-PAGO",amt:1000,met:"Débito"},
+      {id:66,dt:"2026-03-02",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:39000,met:"Transferencia"},
+      {id:67,dt:"2026-03-06",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:350000,met:"Transferencia"},
+      {id:68,dt:"2026-03-07",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:150000,met:"Transferencia"},
+      {id:69,dt:"2026-03-09",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:50000,met:"Transferencia"},
+      {id:70,dt:"2026-03-13",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:425850,met:"Transferencia"},
+      {id:71,dt:"2026-03-19",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:34500,met:"Transferencia"},
+      {id:72,dt:"2026-03-30",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:409150,met:"Transferencia"},
+      {id:73,dt:"2026-03-30",tp:"in",cat:"Otros ingresos",desc:"PIN-SINPE recibido",amt:110000,met:"SINPE"},
+      {id:74,dt:"2026-02-28",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:4527,met:"Crédito"},
+      {id:75,dt:"2026-03-02",tp:"out",cat:"Entretenimiento",desc:"GITHUB, INC.",amt:20554,met:"Crédito"},
+      {id:76,dt:"2026-03-04",tp:"out",cat:"Entretenimiento",desc:"Adobe",amt:12070,met:"Crédito"},
+      {id:77,dt:"2026-03-06",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:59841,met:"Débito"},
+      {id:78,dt:"2026-03-06",tp:"out",cat:"Servicios",desc:"Pago Liberty Movil",amt:24571,met:"Débito"},
+      {id:79,dt:"2026-03-06",tp:"out",cat:"Servicios",desc:"Pago TIGO",amt:46714,met:"Débito"},
+      {id:80,dt:"2026-03-13",tp:"out",cat:"Alimentación",desc:"SUPER JIRARA",amt:14900,met:"Débito"},
+      {id:81,dt:"2026-03-21",tp:"out",cat:"Salud",desc:"FARMACIA LA BOMBA",amt:2979,met:"Débito"},
+      {id:82,dt:"2026-03-27",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:6465,met:"Débito"},
+      {id:83,dt:"2026-03-28",tp:"out",cat:"Entretenimiento",desc:"Spotify",amt:4234,met:"Crédito"},
+      {id:84,dt:"2026-04-15",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:417350,met:"Transferencia"},
+      {id:85,dt:"2026-04-24",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:100000,met:"Transferencia"},
+      {id:86,dt:"2026-04-28",tp:"in",cat:"Otros ingresos",desc:"Transferencia recibida",amt:40000,met:"Transferencia"},
+      {id:87,dt:"2026-04-30",tp:"in",cat:"Salario",desc:"SALARIO QUINCENAL",amt:409150,met:"Transferencia"},
+      {id:88,dt:"2026-03-31",tp:"out",cat:"Transporte",desc:"ECONOMY CAR RENTALS",amt:215587,met:"Crédito"},
+      {id:89,dt:"2026-04-01",tp:"out",cat:"Entretenimiento",desc:"GITHUB, INC.",amt:20296,met:"Crédito"},
+      {id:90,dt:"2026-04-03",tp:"out",cat:"Entretenimiento",desc:"Adobe",amt:11795,met:"Crédito"},
+      {id:91,dt:"2026-04-11",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:4280,met:"Débito"},
+      {id:92,dt:"2026-04-15",tp:"out",cat:"Alimentación",desc:"WALMART CARTAGO",amt:107985,met:"Débito"},
+      {id:93,dt:"2026-04-15",tp:"out",cat:"Servicios",desc:"Pago Liberty Movil",amt:24571,met:"Débito"},
+      {id:94,dt:"2026-04-24",tp:"out",cat:"Salud",desc:"FARMACIA LA BOMBA",amt:420,met:"Débito"},
+      {id:95,dt:"2026-04-25",tp:"out",cat:"Salud",desc:"FARMACIA LA BOMBA",amt:8062,met:"Débito"},
+      {id:96,dt:"2026-04-26",tp:"out",cat:"Salud",desc:"FARMACIA LA BOMBA",amt:2911,met:"Débito"},
+      {id:97,dt:"2026-04-19",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:1384,met:"Crédito"},
+      {id:98,dt:"2026-03-30",tp:"out",cat:"Entretenimiento",desc:"APPLE.COM/BILL",amt:866,met:"Crédito"},
     ],
-    debts:[
-      {id:1,nm:"Tarjeta Visa",tot:450000,rem:320000,min:35000,rate:24},
-      {id:2,nm:"Préstamo personal",tot:1200000,rem:900000,min:65000,rate:18},
-      {id:3,nm:"Préstamo auto",tot:5000000,rem:3200000,min:95000,rate:12},
-    ],
+    debts:[],
     fixed:[
-      {id:1,nm:"Alquiler",amt:250000,day:1},
-      {id:2,nm:"Electricidad",amt:18000,day:15},
-      {id:3,nm:"Internet",amt:22000,day:10},
-      {id:4,nm:"Netflix + Spotify",amt:12000,day:5},
-      {id:5,nm:"Seguro auto",amt:35000,day:20},
+      {id:1,nm:"Liberty Movil",amt:24571,day:6},
+      {id:2,nm:"TIGO",amt:25000,day:6},
+      {id:3,nm:"Spotify",amt:4500,day:28},
+      {id:4,nm:"GitHub",amt:21000,day:1},
+      {id:5,nm:"Adobe",amt:12000,day:3},
     ],
-    budgets:{"Alimentación":150000,"Transporte":60000,"Entretenimiento":30000,"Salud":25000,"Ropa":20000},
+    budgets:{"Alimentación":100000,"Transporte":80000,"Servicios":70000,"Entretenimiento":50000,"Salud":20000},
+    cards:[
+      {id:1,nm:"Visa BAC",limit:500000,balance:320000,min:35000,rate:24,closing:25,due:5,color:"#4d9fff",last4:""},
+      {id:2,nm:"Mastercard BAC",limit:800000,balance:150000,min:20000,rate:22,closing:20,due:10,color:"#a855f7",last4:""},
+    ],
   };
 }
 
@@ -221,6 +283,43 @@ function Seg({options,value,onChange}){
         fontSize:13,fontWeight:600,fontFamily:"'Space Grotesk',sans-serif",
         background:value===k?T.neon:"transparent",color:value===k?"#000":T.t3,
         transition:"all .18s",boxShadow:value===k?"0 0 12px rgba(0,255,136,.4)":"none"}},l))
+  );
+}
+
+function SwipeRow({onDelete,children,style:outerStyle={}}){
+  const[dx,setDx]=useState(0);
+  const[open,setOpen]=useState(false);
+  const x0=useRef(null);
+  const W=72;
+  const ts=e=>{x0.current=e.touches[0].clientX;};
+  const tm=e=>{
+    if(x0.current===null)return;
+    const d=e.touches[0].clientX-x0.current;
+    if(d<0)setDx(Math.max(d,-W));
+    else if(open)setDx(Math.min(d-W,0));
+  };
+  const te=()=>{
+    const snap=open?(dx>-W/2?0:-W):(dx<-W/2?-W:0);
+    setDx(snap);setOpen(snap<0);x0.current=null;
+  };
+  const close=()=>{setDx(0);setOpen(false);};
+  return React.createElement('div',{style:{position:"relative",overflow:"hidden",...outerStyle}},
+    React.createElement('div',{style:{position:"absolute",right:0,top:0,bottom:0,width:W,
+      background:T.red,display:"flex",alignItems:"center",justifyContent:"center"}},
+      React.createElement('button',{onClick:()=>{onDelete();close();},
+        style:{background:"none",border:"none",color:"#fff",cursor:"pointer",
+          display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"0 10px",width:"100%",height:"100%",justifyContent:"center"}},
+        React.createElement('span',{style:{fontSize:20}},"🗑"),
+        React.createElement('span',{style:{fontSize:9,fontWeight:700,letterSpacing:.5}})
+      )
+    ),
+    React.createElement('div',{
+      onTouchStart:ts,onTouchMove:tm,onTouchEnd:te,
+      onClick:open?close:undefined,
+      style:{transform:`translateX(${dx}px)`,
+        transition:x0.current?"none":"transform .25s cubic-bezier(.2,.8,.4,1)",
+        position:"relative",zIndex:1}
+    },children)
   );
 }
 
@@ -358,7 +457,7 @@ function TabTx({data,setData}){
   const[show,setShow]=useState(false);
   const[fil,setFil]=useState("all");
   const[editId,setEditId]=useState(null);
-  const blank={dt:new Date().toISOString().slice(0,10),tp:"out",cat:"Alimentación",desc:"",amt:"",met:"Efectivo"};
+  const blank={dt:new Date().toISOString().slice(0,10),tp:"out",cat:"Alimentación",desc:"",amt:"",met:"Efectivo",cardId:null};
   const[form,setForm]=useState(blank);
   const set=p=>setForm(f=>({...f,...p}));
   const filtered=fil==="all"?data.tx:data.tx.filter(t=>t.tp===(fil==="in"?"in":"out"));
@@ -371,7 +470,7 @@ function TabTx({data,setData}){
     setShow(false);setEditId(null);setForm(blank);
   };
   const del=id=>{setData(d=>({...d,tx:d.tx.filter(t=>t.id!==id)}));setShow(false);setEditId(null);};
-  const openEdit=t=>{setForm({dt:t.dt,tp:t.tp,cat:t.cat,desc:t.desc,amt:String(t.amt),met:t.met});setEditId(t.id);setShow(true);};
+  const openEdit=t=>{setForm({dt:t.dt,tp:t.tp,cat:t.cat,desc:t.desc,amt:String(t.amt),met:t.met,cardId:t.cardId||null});setEditId(t.id);setShow(true);};
   return React.createElement('div',null,
     React.createElement('div',{style:{display:"flex",gap:8,marginBottom:16}},
       [["all","Todos"],["in","Ingresos"],["out","Gastos"]].map(([k,l])=>
@@ -392,9 +491,11 @@ function TabTx({data,setData}){
             (net>=0?"+":"")+F(net))
         ),
         React.createElement(Card,{style:{padding:0,overflow:"hidden"}},
-          txs.map((t,i)=>React.createElement('div',{key:t.id,onClick:()=>openEdit(t),
+          txs.map((t,i)=>React.createElement(SwipeRow,{key:t.id,onDelete:()=>del(t.id),
+            style:{borderBottom:i<txs.length-1?`1px solid ${T.border}`:"none"}},
+            React.createElement('div',{onClick:()=>openEdit(t),
             style:{display:"flex",justifyContent:"space-between",alignItems:"center",
-              padding:"13px 16px",cursor:"pointer",borderBottom:i<txs.length-1?`1px solid ${T.border}`:"none",
+              padding:"13px 16px",cursor:"pointer",
               background:"transparent",transition:"background .12s"}},
             React.createElement('div',{style:{display:"flex",alignItems:"center",gap:10,flex:1,minWidth:0}},
               React.createElement('div',{style:{width:34,height:34,borderRadius:9,flexShrink:0,
@@ -403,13 +504,19 @@ function TabTx({data,setData}){
                 t.tp==="in"?"💵":"💸"),
               React.createElement('div',{style:{minWidth:0}},
                 React.createElement('div',{style:{fontSize:14,color:T.t1,fontWeight:500,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}},t.desc),
-                React.createElement('div',{style:{fontSize:10,color:T.t4,marginTop:1}},t.cat+" · "+t.met+" · "+t.dt.slice(8)+"/"+t.dt.slice(5,7))
+                React.createElement('div',{style:{fontSize:10,color:T.t4,marginTop:1}},t.cat+" · "+t.met+(t.cardId&&(data.cards||[]).find(c=>c.id===t.cardId)?(" · "+((data.cards||[]).find(c=>c.id===t.cardId)||{nm:""}).nm):"")+" · "+t.dt.slice(8)+"/"+t.dt.slice(5,7))
               )
             ),
-            React.createElement('div',{style:{fontSize:14,fontWeight:700,color:t.tp==="in"?T.neon:T.t2,
-              fontFamily:"'JetBrains Mono',monospace",marginLeft:8,flexShrink:0}},
-              (t.tp==="in"?"+":"−")+F(t.amt))
-          ))
+            React.createElement('div',{style:{display:"flex",alignItems:"center",gap:6,flexShrink:0}},
+              React.createElement('div',{style:{fontSize:14,fontWeight:700,color:t.tp==="in"?T.neon:T.t2,
+                fontFamily:"'JetBrains Mono',monospace"}},
+                (t.tp==="in"?"+":"−")+F(t.amt)),
+              React.createElement('button',{onClick:e=>{e.stopPropagation();del(t.id);},
+                style:{background:"rgba(255,77,109,.15)",border:"none",borderRadius:7,
+                  width:28,height:28,cursor:"pointer",color:T.red,fontSize:14,
+                  display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}},"✕")
+            )
+          )))
         )
       );
     }),
@@ -427,7 +534,11 @@ function TabTx({data,setData}){
       React.createElement(Sel,{label:"Categoría",options:form.tp==="in"?CI:CE,value:form.cat,onChange:e=>set({cat:e.target.value})}),
       React.createElement(Inp,{label:"Descripción",placeholder:"Ej: Super semanal",value:form.desc,onChange:e=>set({desc:e.target.value})}),
       React.createElement(Inp,{label:"Monto (₡)",type:"number",placeholder:"25000",value:form.amt,onChange:e=>set({amt:e.target.value}),inputMode:"numeric"}),
-      React.createElement(Sel,{label:"Método",options:METS,value:form.met,onChange:e=>set({met:e.target.value})}),
+      React.createElement(Sel,{label:"Método",options:METS,value:form.met,onChange:e=>set({met:e.target.value,cardId:null})}),
+      form.met==="Crédito"&&(data.cards||[]).length>0&&React.createElement(Sel,{label:"Tarjeta de crédito",
+        options:["Sin asignar",...(data.cards||[]).map(c=>c.nm)],
+        value:form.cardId?((data.cards||[]).find(c=>c.id===form.cardId)||{nm:"Sin asignar"}).nm:"Sin asignar",
+        onChange:e=>{const card=(data.cards||[]).find(c=>c.nm===e.target.value);set({cardId:card?card.id:null});}}),
       React.createElement(Btn,{onClick:save,color:form.tp==="in"?T.neon:T.blue},editId?"Guardar cambios":"Agregar"),
       editId&&React.createElement(Btn,{onClick:()=>del(editId),color:T.red,variant:"outline",style:{marginTop:8}},"Eliminar")
     )
@@ -579,7 +690,8 @@ function TabDebts({data,setData}){
       const pct=d.tot>0?(d.tot-d.rem)/d.tot*100:0;
       const mths=d.min>0?Math.ceil(d.rem/d.min):999;
       const col=[T.yellow,T.blue,T.purple,T.cyan][i]||T.neon;
-      return React.createElement(Card,{key:d.id,accent:col,style:{marginBottom:10,cursor:"pointer"},onClick:()=>openEdit(d)},
+      return React.createElement(SwipeRow,{key:d.id,onDelete:()=>del(d.id),style:{marginBottom:10,borderRadius:16}},
+        React.createElement(Card,{accent:col,style:{marginBottom:0,cursor:"pointer"},onClick:()=>openEdit(d)},
         React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:11}},
           React.createElement('div',null,
             React.createElement('div',{style:{display:"flex",alignItems:"center",gap:7,marginBottom:2}},
@@ -603,6 +715,7 @@ function TabDebts({data,setData}){
         i===0&&extra>0&&React.createElement('div',{style:{marginTop:9,background:"rgba(255,214,10,.1)",
           border:`1px solid ${T.yellow}25`,borderRadius:9,padding:"7px 11px",fontSize:12,color:T.yellow}},
           "💡 Sugerido: pagar ",React.createElement('strong',null,F(d.min+extra)),"/mes para liquidar antes")
+        )
       );
     }),
     React.createElement(Btn,{onClick:()=>{setForm(blank);setEditId(null);setShow(true);},color:T.yellow,style:{marginTop:6}},"+ Agregar deuda"),
@@ -643,14 +756,16 @@ function TabFixed({data,setData}){
     data.fixed.sort((a,b)=>a.day-b.day).map(f=>{
       const past=f.day<today;const isT=f.day===today;const soon=f.day>=today&&f.day<=today+3;
       const col=isT?T.yellow:soon?T.red:past?T.bg4:T.cyan;
-      return React.createElement(Card,{key:f.id,accent:col,style:{marginBottom:9,cursor:"pointer",opacity:past?.45:1},onClick:()=>openEdit(f)},
-        React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
-          React.createElement('div',null,
-            React.createElement('div',{style:{fontSize:15,fontWeight:600,marginBottom:2}},f.nm),
-            React.createElement('div',{style:{fontSize:12,color:isT?T.yellow:soon?T.red:T.t4}},
-              isT?"⚡ Vence hoy":soon?"⏰ Día "+f.day+" — pronto":past?"✓ Día "+f.day:"Día "+f.day)
-          ),
-          React.createElement('div',{style:{fontSize:19,fontWeight:700,color:col,fontFamily:"'JetBrains Mono',monospace"}},F(f.amt))
+      return React.createElement(SwipeRow,{key:f.id,onDelete:()=>del(f.id),style:{marginBottom:9,borderRadius:16}},
+        React.createElement(Card,{accent:col,style:{marginBottom:0,cursor:"pointer",opacity:past?.45:1},onClick:()=>openEdit(f)},
+          React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            React.createElement('div',null,
+              React.createElement('div',{style:{fontSize:15,fontWeight:600,marginBottom:2}},f.nm),
+              React.createElement('div',{style:{fontSize:12,color:isT?T.yellow:soon?T.red:T.t4}},
+                isT?"⚡ Vence hoy":soon?"⏰ Día "+f.day+" — pronto":past?"✓ Día "+f.day:"Día "+f.day)
+            ),
+            React.createElement('div',{style:{fontSize:19,fontWeight:700,color:col,fontFamily:"'JetBrains Mono',monospace"}},F(f.amt))
+          )
         )
       );
     }),
@@ -787,6 +902,166 @@ function TabHistory({data}){
   );
 }
 
+/* ── CREDIT CARDS ── */
+const CARD_COLORS=["#4d9fff","#a855f7","#00ff88","#ffd60a","#ff9f43","#00d4ff","#ff4d6d"];
+
+function TabCards({data,setData}){
+  const[show,setShow]=useState(false);
+  const[showPay,setShowPay]=useState(false);
+  const[editId,setEditId]=useState(null);
+  const[payCard,setPayCard]=useState(null);
+  const blank={nm:"",limit:"",balance:"",min:"",rate:"",closing:"",due:"",color:CARD_COLORS[0],last4:""};
+  const[form,setForm]=useState(blank);
+  const[payForm,setPayForm]=useState({amt:"",dt:new Date().toISOString().slice(0,10)});
+  const sf=p=>setForm(f=>({...f,...p}));
+  const cards=data.cards||[];
+  const totalOwed=cards.reduce((s,c)=>s+c.balance,0);
+  const totalLimit=cards.reduce((s,c)=>s+c.limit,0);
+  const totalMin=cards.reduce((s,c)=>s+c.min,0);
+  const save=()=>{
+    if(!form.nm)return;
+    const obj={nm:form.nm,limit:+form.limit||0,balance:+form.balance||0,min:+form.min||0,
+      rate:+form.rate||0,closing:+form.closing||0,due:+form.due||0,color:form.color,last4:form.last4};
+    if(editId){setData(d=>({...d,cards:d.cards.map(c=>c.id===editId?{...c,...obj}:c)}));}
+    else{setData(d=>({...d,cards:[...d.cards,{id:uid(),...obj}]}));}
+    setShow(false);setEditId(null);setForm(blank);
+  };
+  const del=id=>{setData(d=>({...d,cards:d.cards.filter(c=>c.id!==id)}));setShow(false);setEditId(null);};
+  const openEdit=c=>{setForm({nm:c.nm,limit:String(c.limit),balance:String(c.balance),min:String(c.min),
+    rate:String(c.rate),closing:String(c.closing),due:String(c.due),color:c.color||CARD_COLORS[0],last4:c.last4||""});
+    setEditId(c.id);setShow(true);};
+  const pay=()=>{
+    if(!payCard||!payForm.amt)return;
+    const amt=+payForm.amt;
+    setData(d=>({...d,
+      cards:d.cards.map(c=>c.id===payCard.id?{...c,balance:Math.max(0,c.balance-amt)}:c),
+      tx:[...d.tx,{id:uid(),dt:payForm.dt,tp:"out",cat:"Deudas",desc:"Pago "+payCard.nm,amt,met:"Transferencia",cardId:payCard.id}]
+    }));
+    setShowPay(false);setPayCard(null);setPayForm({amt:"",dt:new Date().toISOString().slice(0,10)});
+  };
+  const today=new Date().getDate();
+  const now2=new Date();
+  return React.createElement('div',null,
+    React.createElement('div',{style:{display:"flex",gap:10,marginBottom:16,flexWrap:"wrap"}},
+      React.createElement(KPI,{label:"Total adeudado",value:F(totalOwed),color:T.red,icon:"💳",sub:cards.length+" tarjetas"}),
+      React.createElement(KPI,{label:"Pago mínimo total",value:F(totalMin),color:T.yellow,icon:"📅",
+        sub:totalLimit>0?"Límite: "+F(totalLimit):undefined})
+    ),
+    cards.map((c,i)=>{
+      const col=c.color||CARD_COLORS[i%CARD_COLORS.length];
+      const pct=c.limit>0?Math.min(c.balance/c.limit*100,100):0;
+      const avail=Math.max(0,c.limit-c.balance);
+      const daysToClose=c.closing?((c.closing-today+31)%31||31):null;
+      const daysToDue=c.due?((c.due-today+31)%31||31):null;
+      const closingSoon=daysToClose!==null&&daysToClose<=5;
+      const dueSoon=daysToDue!==null&&daysToDue<=5;
+      const cardTx=(data.tx||[]).filter(t=>t.cardId===c.id&&t.tp==="out"&&!(t.desc||"").startsWith("Pago "));
+      const mTx=cardTx.filter(t=>{const d=new Date(t.dt+"T12:00:00");return d.getFullYear()===now2.getFullYear()&&d.getMonth()===now2.getMonth();});
+      const mSpent=mTx.reduce((s,t)=>s+t.amt,0);
+      return React.createElement('div',{key:c.id,style:{marginBottom:12}},
+        React.createElement(Card,{accent:col},
+          React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12}},
+            React.createElement('div',null,
+              React.createElement('div',{style:{display:"flex",alignItems:"center",gap:8,marginBottom:3}},
+                React.createElement('div',{style:{width:9,height:9,borderRadius:"50%",background:col,boxShadow:`0 0 6px ${col}`}}),
+                React.createElement('span',{style:{fontSize:16,fontWeight:700}},c.nm),
+                c.last4&&React.createElement('span',{style:{fontSize:11,color:T.t4,fontFamily:"'JetBrains Mono',monospace"}},"•••• "+c.last4)
+              ),
+              React.createElement('div',{style:{display:"flex",gap:8,fontSize:11,flexWrap:"wrap"}},
+                c.rate>0&&React.createElement('span',{style:{color:T.t4}},c.rate+"% anual"),
+                closingSoon&&React.createElement('span',{style:{color:T.yellow}},"⚠️ Corte en "+daysToClose+"d"),
+                dueSoon&&React.createElement('span',{style:{color:T.red}},"🔔 Pago en "+daysToDue+"d")
+              )
+            ),
+            React.createElement('div',{style:{display:"flex",gap:6,alignItems:"flex-start"}},
+              React.createElement('button',{onClick:()=>{setPayCard(c);setShowPay(true);},
+                style:{background:col+"22",border:`1px solid ${col}50`,borderRadius:9,padding:"5px 11px",
+                  cursor:"pointer",color:col,fontSize:12,fontWeight:700,fontFamily:"'Space Grotesk',sans-serif"}},
+                "Pagar"),
+              React.createElement('button',{onClick:()=>openEdit(c),
+                style:{background:T.bg3,border:`1px solid ${T.border}`,borderRadius:9,width:32,height:32,
+                  cursor:"pointer",color:T.t3,fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},
+                "✏️")
+            )
+          ),
+          React.createElement('div',{style:{display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:8}},
+            React.createElement('div',null,
+              React.createElement('div',{style:{fontSize:11,color:T.t4,marginBottom:2}},"Saldo adeudado"),
+              React.createElement('div',{style:{fontSize:26,fontWeight:700,color:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}},F(c.balance))
+            ),
+            c.limit>0&&React.createElement('div',{style:{textAlign:"right"}},
+              React.createElement('div',{style:{fontSize:11,color:T.t4,marginBottom:2}},"Disponible"),
+              React.createElement('div',{style:{fontSize:18,fontWeight:700,color:T.neon,fontFamily:"'JetBrains Mono',monospace"}},F(avail))
+            )
+          ),
+          c.limit>0&&React.createElement(PBar,{value:c.balance,max:c.limit,color:col,h:5}),
+          c.limit>0&&React.createElement('div',{style:{display:"flex",justifyContent:"space-between",fontSize:10,color:T.t4,marginTop:3,marginBottom:8}},
+            React.createElement('span',null,pct.toFixed(0)+"% utilizado"),
+            React.createElement('span',null,"Límite: "+F(c.limit))
+          ),
+          React.createElement('div',{style:{display:"flex",gap:8,paddingTop:9,borderTop:`1px solid ${T.border}`,flexWrap:"wrap"}},
+            c.min>0&&React.createElement('div',{style:{flex:1,minWidth:80}},
+              React.createElement('div',{style:{fontSize:10,color:T.t4,marginBottom:1}},"Pago mínimo"),
+              React.createElement('div',{style:{fontSize:14,fontWeight:700,color:T.yellow,fontFamily:"'JetBrains Mono',monospace"}},F(c.min))
+            ),
+            c.closing>0&&React.createElement('div',{style:{flex:1,minWidth:60}},
+              React.createElement('div',{style:{fontSize:10,color:T.t4,marginBottom:1}},"Día corte"),
+              React.createElement('div',{style:{fontSize:14,fontWeight:700,color:closingSoon?T.yellow:T.t2}},"Día "+c.closing)
+            ),
+            c.due>0&&React.createElement('div',{style:{flex:1,minWidth:60}},
+              React.createElement('div',{style:{fontSize:10,color:T.t4,marginBottom:1}},"Fecha pago"),
+              React.createElement('div',{style:{fontSize:14,fontWeight:700,color:dueSoon?T.red:T.t2}},"Día "+c.due)
+            )
+          ),
+          mSpent>0&&React.createElement('div',{style:{marginTop:9,padding:"8px 11px",background:col+"15",
+            border:`1px solid ${col}25`,borderRadius:9,display:"flex",justifyContent:"space-between",alignItems:"center"}},
+            React.createElement('div',{style:{fontSize:11,color:T.t4}},"Cargado este mes"),
+            React.createElement('div',{style:{fontSize:15,fontWeight:700,color:col,fontFamily:"'JetBrains Mono',monospace"}},
+              F(mSpent),React.createElement('span',{style:{fontSize:11,fontWeight:400,color:T.t4}},
+                " · "+mTx.length+" compras"))
+          )
+        )
+      );
+    }),
+    cards.length===0&&React.createElement('div',{style:{textAlign:"center",padding:"40px 0",color:T.t4}},"No hay tarjetas registradas"),
+    React.createElement(Btn,{onClick:()=>{setForm(blank);setEditId(null);setShow(true);},color:T.purple,style:{marginTop:6}},"+ Agregar tarjeta"),
+    React.createElement(Modal,{open:show,onClose:()=>{setShow(false);setEditId(null);},title:editId?"Editar tarjeta":"Nueva tarjeta"},
+      React.createElement(Inp,{label:"Nombre de la tarjeta",placeholder:"Ej: Visa BAC",value:form.nm,onChange:e=>sf({nm:e.target.value})}),
+      React.createElement(Inp,{label:"Últimos 4 dígitos (opcional)",placeholder:"1234",maxLength:"4",value:form.last4,onChange:e=>sf({last4:e.target.value})}),
+      React.createElement(Inp,{label:"Límite de crédito (₡)",type:"number",value:form.limit,onChange:e=>sf({limit:e.target.value}),inputMode:"numeric"}),
+      React.createElement(Inp,{label:"Saldo adeudado actual (₡)",type:"number",value:form.balance,onChange:e=>sf({balance:e.target.value}),inputMode:"numeric"}),
+      React.createElement(Inp,{label:"Pago mínimo (₡)",type:"number",value:form.min,onChange:e=>sf({min:e.target.value}),inputMode:"numeric"}),
+      React.createElement(Inp,{label:"Tasa anual (%)",type:"number",value:form.rate,onChange:e=>sf({rate:e.target.value}),inputMode:"decimal"}),
+      React.createElement(Inp,{label:"Día de corte",type:"number",min:"1",max:"31",value:form.closing,onChange:e=>sf({closing:e.target.value}),inputMode:"numeric"}),
+      React.createElement(Inp,{label:"Día de pago",type:"number",min:"1",max:"31",value:form.due,onChange:e=>sf({due:e.target.value}),inputMode:"numeric"}),
+      React.createElement(Field,{label:"Color"},
+        React.createElement('div',{style:{display:"flex",gap:9,marginTop:2}},
+          CARD_COLORS.map(col=>React.createElement('div',{key:col,onClick:()=>sf({color:col}),
+            style:{width:28,height:28,borderRadius:"50%",background:col,cursor:"pointer",transition:"all .15s",
+              border:form.color===col?"3px solid #fff":"2px solid transparent",
+              boxShadow:form.color===col?`0 0 10px ${col}`:"none"}}))
+        )
+      ),
+      React.createElement(Btn,{onClick:save,color:T.purple},editId?"Guardar cambios":"Agregar tarjeta"),
+      editId&&React.createElement(Btn,{onClick:()=>del(editId),color:T.red,variant:"outline",style:{marginTop:8}},"Eliminar tarjeta")
+    ),
+    React.createElement(Modal,{open:showPay,onClose:()=>{setShowPay(false);setPayCard(null);},
+      title:"Pagar — "+(payCard?.nm||"")},
+      payCard&&React.createElement('div',{style:{background:T.red+"12",border:`1px solid ${T.red}25`,
+        borderRadius:11,padding:"12px 15px",marginBottom:14}},
+        React.createElement('div',{style:{fontSize:11,color:T.t4,marginBottom:2}},"Saldo adeudado"),
+        React.createElement('div',{style:{fontSize:24,fontWeight:700,color:T.red,fontFamily:"'JetBrains Mono',monospace",letterSpacing:-1}},F(payCard.balance)),
+        payCard.min>0&&React.createElement('div',{style:{fontSize:12,color:T.t4,marginTop:3}},"Mínimo: "+F(payCard.min))
+      ),
+      React.createElement(Inp,{label:"Monto del pago (₡)",type:"number",placeholder:payCard?String(payCard.min):"",
+        value:payForm.amt,onChange:e=>setPayForm(f=>({...f,amt:e.target.value})),inputMode:"numeric"}),
+      React.createElement(Inp,{label:"Fecha del pago",type:"date",value:payForm.dt,
+        onChange:e=>setPayForm(f=>({...f,dt:e.target.value}))}),
+      React.createElement(Btn,{onClick:pay,color:T.neon},"✓ Registrar pago")
+    )
+  );
+}
+
 /* ── MAIN APP ── */
 function App(){
   const[data,setData]=useState(loadDB);
@@ -795,13 +1070,14 @@ function App(){
   const tabs=[
     {id:"home",icon:"🏠",label:"Inicio",col:T.neon},
     {id:"tx",icon:"↕️",label:"Movimientos",col:T.blue},
+    {id:"cards",icon:"💳",label:"Tarjetas",col:T.purple},
     {id:"budgets",icon:"🎯",label:"Presupuesto",col:T.blue},
-    {id:"debts",icon:"💳",label:"Deudas",col:T.yellow},
+    {id:"debts",icon:"⚠️",label:"Deudas",col:T.yellow},
     {id:"fixed",icon:"📌",label:"Fijos",col:T.cyan},
     {id:"hist",icon:"📈",label:"Historial",col:T.purple},
   ];
-  const titles={home:"Dashboard",tx:"Movimientos",budgets:"Presupuesto",debts:"Deudas",fixed:"Gastos Fijos",hist:"Historial"};
-  const accs={home:T.neon,tx:T.blue,budgets:T.blue,debts:T.yellow,fixed:T.cyan,hist:T.purple};
+  const titles={home:"Dashboard",tx:"Movimientos",cards:"Tarjetas de Crédito",budgets:"Presupuesto",debts:"Deudas",fixed:"Gastos Fijos",hist:"Historial"};
+  const accs={home:T.neon,tx:T.blue,cards:T.purple,budgets:T.blue,debts:T.yellow,fixed:T.cyan,hist:T.purple};
   const curTab=tabs.find(t=>t.id===tab);
   return React.createElement('div',{style:{background:T.bg0,minHeight:"100vh",color:T.t1,
     fontFamily:"'Space Grotesk',sans-serif",maxWidth:500,margin:"0 auto",paddingBottom:90}},
@@ -826,6 +1102,7 @@ function App(){
     React.createElement('div',{style:{padding:"14px 14px 0",position:"relative",zIndex:1}},
       tab==="home"&&React.createElement(TabDash,{data}),
       tab==="tx"&&React.createElement(TabTx,{data,setData}),
+      tab==="cards"&&React.createElement(TabCards,{data,setData}),
       tab==="budgets"&&React.createElement(TabBudgets,{data,setData}),
       tab==="debts"&&React.createElement(TabDebts,{data,setData}),
       tab==="fixed"&&React.createElement(TabFixed,{data,setData}),
@@ -834,10 +1111,10 @@ function App(){
     React.createElement('div',{style:{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",
       width:"100%",maxWidth:500,zIndex:100,background:T.bg1+"f2",
       backdropFilter:"blur(28px)",borderTop:`1px solid ${T.border}`}},
-      React.createElement('div',{style:{display:"flex",justifyContent:"space-around",padding:"5px 0 10px"}},
+      React.createElement('div',{style:{display:"flex",padding:"5px 2px 10px",overflowX:"auto",scrollbarWidth:"none",msOverflowStyle:"none"}},
         tabs.map(t=>React.createElement('button',{key:t.id,onClick:()=>setTab(t.id),
           style:{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",
-            alignItems:"center",gap:2,padding:"4px 6px",borderRadius:10}},
+            alignItems:"center",gap:2,padding:"4px 2px",borderRadius:10,flex:"1 0 60px",minWidth:60}},
           React.createElement('div',{style:{width:34,height:34,borderRadius:9,display:"flex",
             alignItems:"center",justifyContent:"center",fontSize:17,transition:"all .18s",
             background:tab===t.id?t.col+"1a":"transparent",
