@@ -94,6 +94,19 @@ const DEFAULT_DATA = {
     { id: 1, nm: 'Super semanal', cat: 'Alimentación', price: 42000, freq: 'Semanal', last: '2026-05-12' },
     { id: 2, nm: 'Spotify', cat: 'Entretenimiento', price: 4234, freq: 'Mensual', last: '2026-05-08' },
     { id: 3, nm: 'Farmacia básica', cat: 'Salud', price: 14000, freq: 'Mensual', last: '2026-05-07' }
+  ],
+  fixed: [
+    { id: 1, nm: 'Alquiler', amt: 250000, day: 1, cat: 'Alquiler' },
+    { id: 2, nm: 'Internet', amt: 22000, day: 10, cat: 'Servicios' }
+  ],
+  extras: [
+    { id: 1, nm: 'Imprevistos carro', amt: 35000, cat: 'Transporte' },
+    { id: 2, nm: 'Regalo familiar', amt: 25000, cat: 'Otros' }
+  ],
+  platforms: [
+    { id: 1, nm: 'Netflix', amt: 6990, due: 12 },
+    { id: 2, nm: 'Spotify', amt: 4234, due: 8 },
+    { id: 3, nm: 'GitHub', amt: 20296, due: 15 }
   ]
 };
 
@@ -139,7 +152,6 @@ function SwipeRow({ children, onDelete }) {
       <SwipeAction onClick={onDelete} destructive>
         <Box className="swipe-delete swipe-delete--leading">
           <IconTrash size={18} />
-          <Text fw={700}>Eliminar</Text>
         </Box>
       </SwipeAction>
     </LeadingActions>
@@ -150,7 +162,6 @@ function SwipeRow({ children, onDelete }) {
       <SwipeAction onClick={onDelete} destructive>
         <Box className="swipe-delete">
           <IconTrash size={18} />
-          <Text fw={700}>Eliminar</Text>
         </Box>
       </SwipeAction>
     </TrailingActions>
@@ -253,8 +264,12 @@ export default function App() {
   const [tab, setTab] = useState('home');
   const [drawerOpened, drawerHandlers] = useDisclosure(false);
   const [budgetModalOpened, budgetModalHandlers] = useDisclosure(false);
+  const [cardModalOpened, cardModalHandlers] = useDisclosure(false);
+  const [savingModalOpened, savingModalHandlers] = useDisclosure(false);
   const [draft, setDraft] = useState({ id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
   const [budgetDraft, setBudgetDraft] = useState({ category: 'Alimentación', amount: 0 });
+  const [cardDraft, setCardDraft] = useState({ nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
+  const [savingDraft, setSavingDraft] = useState({ nm: '', target: 0, current: 0, due: '', monthly: 0 });
   const [currentMonth, setCurrentMonth] = useState(() => {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() };
@@ -347,6 +362,30 @@ export default function App() {
       }
     }));
     budgetModalHandlers.close();
+  };
+
+  const saveCard = () => {
+    if (!cardDraft.nm || !cardDraft.limit) {
+      return;
+    }
+    setData(current => ({
+      ...current,
+      cards: [...current.cards, { id: newId(), ...cardDraft }]
+    }));
+    setCardDraft({ nm: '', limit: 0, balance: 0, closing: 25, due: 10, last4: '' });
+    cardModalHandlers.close();
+  };
+
+  const saveSaving = () => {
+    if (!savingDraft.nm || !savingDraft.target) {
+      return;
+    }
+    setData(current => ({
+      ...current,
+      savings: [...current.savings, { id: newId(), ...savingDraft }]
+    }));
+    setSavingDraft({ nm: '', target: 0, current: 0, due: '', monthly: 0 });
+    savingModalHandlers.close();
   };
 
   const buyShoppingItem = item => {
@@ -551,10 +590,10 @@ export default function App() {
 
           {tab === 'cards' && (
             <>
-              <SectionHeader label="BAC" title="Tarjetas" />
+              <SectionHeader label="BAC" title="Tarjetas" action={<ActionIcon size="xl" radius="xl" onClick={() => cardModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.cards.map(card => (
                 <SwipeRow key={card.id} onDelete={() => removeCard(card.id)}>
-                  <Card radius="xl" withBorder p="lg" style={{ background: 'linear-gradient(135deg, rgba(91,157,255,.18), transparent)' }}>
+                  <UniformCard style={{ background: 'linear-gradient(135deg, rgba(91,157,255,.18), transparent)' }}>
                     <Group justify="space-between" align="start">
                       <Box>
                         <Title order={3}>{card.nm}</Title>
@@ -573,7 +612,7 @@ export default function App() {
                       </Box>
                     </Group>
                     <Progress mt="md" size="lg" radius="xl" value={(card.balance / card.limit) * 100} color="blue" />
-                  </Card>
+                  </UniformCard>
                 </SwipeRow>
               ))}
             </>
@@ -586,7 +625,7 @@ export default function App() {
                 const spent = monthTx.filter(item => item.tp === 'out' && item.cat === category).reduce((sum, item) => sum + item.amt, 0);
                 return (
                   <SwipeRow key={category} onDelete={() => removeBudget(category)}>
-                    <Card radius="xl" withBorder onClick={() => setTab('tx')} style={{ cursor: 'pointer' }}>
+                    <UniformCard onClick={() => setTab('tx')}>
                       <Group justify="space-between">
                         <Box>
                           <Text fw={800}>{category}</Text>
@@ -595,7 +634,7 @@ export default function App() {
                         <Badge color={spent > budget ? 'red' : 'blue'}>{Math.round((spent / budget) * 100)}%</Badge>
                       </Group>
                       <Progress mt="md" size="lg" radius="xl" value={Math.min((spent / budget) * 100, 100)} color={spent > budget ? 'red' : 'blue'} />
-                    </Card>
+                    </UniformCard>
                   </SwipeRow>
                 );
               })}
@@ -604,10 +643,10 @@ export default function App() {
 
           {tab === 'savings' && (
             <>
-              <SectionHeader label="Sistema" title="Ahorros" />
+              <SectionHeader label="Sistema" title="Ahorros" action={<ActionIcon size="xl" radius="xl" onClick={() => savingModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {data.savings.map(goal => (
                 <SwipeRow key={goal.id} onDelete={() => removeSaving(goal.id)}>
-                  <Card radius="xl" withBorder>
+                  <UniformCard>
                     <Group justify="space-between">
                       <Box>
                         <Text fw={800}>{goal.nm}</Text>
@@ -617,7 +656,7 @@ export default function App() {
                     </Group>
                     <Progress mt="md" size="lg" radius="xl" color="teal" value={(goal.current / goal.target) * 100} />
                     <Text mt="sm" size="sm" c="dimmed">Aporte sugerido mensual: {fmt(goal.monthly)}</Text>
-                  </Card>
+                  </UniformCard>
                 </SwipeRow>
               ))}
             </>
@@ -628,7 +667,7 @@ export default function App() {
               <SectionHeader label="Rutina" title="Compras frecuentes" />
               {data.shopping.map(item => (
                 <SwipeRow key={item.id} onDelete={() => removeShopping(item.id)}>
-                  <Card radius="xl" withBorder>
+                  <UniformCard>
                     <Group justify="space-between" align="start">
                       <Box>
                         <Text fw={800}>{item.nm}</Text>
@@ -637,8 +676,44 @@ export default function App() {
                       <Text fw={800} className="mono">{fmt(item.price)}</Text>
                     </Group>
                     <Button mt="md" variant="light" leftSection={<IconShoppingBag size={16} />} onClick={() => buyShoppingItem(item)}>Comprar ahora</Button>
-                  </Card>
+                  </UniformCard>
                 </SwipeRow>
+              ))}
+              <SectionHeader label="Servicios" title="Plataformas digitales" />
+              {data.platforms.map(item => (
+                <UniformCard key={item.id}>
+                  <Group justify="space-between">
+                    <Box>
+                      <Text fw={800}>{item.nm}</Text>
+                      <Text size="sm" c="dimmed">Cobro el día {item.due}</Text>
+                    </Box>
+                    <Text fw={800} className="mono">{fmt(item.amt)}</Text>
+                  </Group>
+                </UniformCard>
+              ))}
+              <SectionHeader label="Caja" title="Gastos extra" />
+              {data.extras.map(item => (
+                <UniformCard key={item.id}>
+                  <Group justify="space-between">
+                    <Box>
+                      <Text fw={800}>{item.nm}</Text>
+                      <Text size="sm" c="dimmed">{item.cat}</Text>
+                    </Box>
+                    <Text fw={800} className="mono">{fmt(item.amt)}</Text>
+                  </Group>
+                </UniformCard>
+              ))}
+              <SectionHeader label="Calendario" title="Pagos fijos" />
+              {data.fixed.map(item => (
+                <UniformCard key={item.id}>
+                  <Group justify="space-between">
+                    <Box>
+                      <Text fw={800}>{item.nm}</Text>
+                      <Text size="sm" c="dimmed">{item.cat} · día {item.day}</Text>
+                    </Box>
+                    <Text fw={800} className="mono">{fmt(item.amt)}</Text>
+                  </Group>
+                </UniformCard>
               ))}
             </>
           )}
@@ -720,6 +795,37 @@ export default function App() {
           <Button onClick={saveBudget}>Guardar presupuesto</Button>
         </Stack>
       </Modal>
+      <Modal opened={cardModalOpened} onClose={cardModalHandlers.close} title="Nueva tarjeta" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={cardDraft.nm} onChange={event => setCardDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <NumberInput label="Límite" hideControls thousandSeparator="," value={cardDraft.limit} onChange={value => setCardDraft(current => ({ ...current, limit: Number(value) || 0 }))} />
+          <NumberInput label="Saldo actual" hideControls thousandSeparator="," value={cardDraft.balance} onChange={value => setCardDraft(current => ({ ...current, balance: Number(value) || 0 }))} />
+          <TextInput label="Últimos 4 dígitos" value={cardDraft.last4} onChange={event => setCardDraft(current => ({ ...current, last4: event.currentTarget.value }))} />
+          <Group grow>
+            <NumberInput label="Corte" hideControls value={cardDraft.closing} onChange={value => setCardDraft(current => ({ ...current, closing: Number(value) || 0 }))} />
+            <NumberInput label="Pago" hideControls value={cardDraft.due} onChange={value => setCardDraft(current => ({ ...current, due: Number(value) || 0 }))} />
+          </Group>
+          <Button onClick={saveCard}>Guardar tarjeta</Button>
+        </Stack>
+      </Modal>
+      <Modal opened={savingModalOpened} onClose={savingModalHandlers.close} title="Nueva meta de ahorro" centered radius="xl">
+        <Stack>
+          <TextInput label="Nombre" value={savingDraft.nm} onChange={event => setSavingDraft(current => ({ ...current, nm: event.currentTarget.value }))} />
+          <NumberInput label="Meta" hideControls thousandSeparator="," value={savingDraft.target} onChange={value => setSavingDraft(current => ({ ...current, target: Number(value) || 0 }))} />
+          <NumberInput label="Ahorrado actual" hideControls thousandSeparator="," value={savingDraft.current} onChange={value => setSavingDraft(current => ({ ...current, current: Number(value) || 0 }))} />
+          <TextInput label="Fecha objetivo" type="date" value={savingDraft.due} onChange={event => setSavingDraft(current => ({ ...current, due: event.currentTarget.value }))} />
+          <NumberInput label="Aporte mensual" hideControls thousandSeparator="," value={savingDraft.monthly} onChange={value => setSavingDraft(current => ({ ...current, monthly: Number(value) || 0 }))} />
+          <Button onClick={saveSaving}>Guardar ahorro</Button>
+        </Stack>
+      </Modal>
     </Box>
+  );
+}
+
+function UniformCard({ children, onClick, style }) {
+  return (
+    <Card radius="xl" withBorder p="lg" className="uniform-card" onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default', ...style }}>
+      {children}
+    </Card>
   );
 }
