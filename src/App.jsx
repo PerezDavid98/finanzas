@@ -46,6 +46,14 @@ import {
 } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
+  LeadingActions,
+  SwipeAction,
+  SwipeableList,
+  SwipeableListItem,
+  TrailingActions,
+  Type
+} from 'react-swipeable-list';
+import {
   Area,
   AreaChart,
   CartesianGrid,
@@ -126,32 +134,34 @@ function StatCard({ label, value, sub, icon, color, onClick }) {
 }
 
 function SwipeRow({ children, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const deleteThreshold = -108;
+  const leadingActions = (
+    <LeadingActions>
+      <SwipeAction onClick={onDelete} destructive>
+        <Box className="swipe-delete swipe-delete--leading">
+          <IconTrash size={18} />
+          <Text fw={700}>Eliminar</Text>
+        </Box>
+      </SwipeAction>
+    </LeadingActions>
+  );
+
+  const trailingActions = (
+    <TrailingActions>
+      <SwipeAction onClick={onDelete} destructive>
+        <Box className="swipe-delete">
+          <IconTrash size={18} />
+          <Text fw={700}>Eliminar</Text>
+        </Box>
+      </SwipeAction>
+    </TrailingActions>
+  );
+
   return (
-    <Box pos="relative" style={{ overflow: 'hidden', borderRadius: 24 }}>
-      <Paper bg="red.6" pos="absolute" top={0} right={0} h="100%" w={116} radius="xl" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Button color="red" variant="subtle" leftSection={<IconTrash size={16} />} onClick={onDelete}>Eliminar</Button>
-      </Paper>
-      <motion.div
-        drag="x"
-        dragConstraints={{ left: -116, right: 0 }}
-        dragElastic={0.03}
-        dragMomentum={false}
-        style={{ touchAction: 'pan-y' }}
-        onDragEnd={(_, info) => {
-          if (info.offset.x <= deleteThreshold || info.velocity.x < -700) {
-            onDelete();
-            return;
-          }
-          setOpen(info.offset.x < -56);
-        }}
-        animate={{ x: open ? -116 : 0 }}
-        transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-      >
-        <Box onClick={() => open && setOpen(false)}>{children}</Box>
-      </motion.div>
-    </Box>
+    <SwipeableList type={Type.IOS} fullSwipe>
+      <SwipeableListItem leadingActions={leadingActions} trailingActions={trailingActions}>
+        <Box className="swipe-card">{children}</Box>
+      </SwipeableListItem>
+    </SwipeableList>
   );
 }
 
@@ -242,7 +252,9 @@ export default function App() {
   const [data, setData] = useLocalStorage({ key: 'finanzas-v7', defaultValue: DEFAULT_DATA });
   const [tab, setTab] = useState('home');
   const [drawerOpened, drawerHandlers] = useDisclosure(false);
+  const [budgetModalOpened, budgetModalHandlers] = useDisclosure(false);
   const [draft, setDraft] = useState({ id: null, dt: new Date().toISOString().slice(0, 10), tp: 'out', cat: 'Alimentación', desc: '', amt: 0, met: 'Débito', cardId: null });
+  const [budgetDraft, setBudgetDraft] = useState({ category: 'Alimentación', amount: 0 });
   const [currentMonth, setCurrentMonth] = useState(() => {
     const today = new Date();
     return { year: today.getFullYear(), month: today.getMonth() };
@@ -321,6 +333,20 @@ export default function App() {
 
   const removeShopping = id => {
     setData(current => ({ ...current, shopping: current.shopping.filter(item => item.id !== id) }));
+  };
+
+  const saveBudget = () => {
+    if (!budgetDraft.category || !budgetDraft.amount) {
+      return;
+    }
+    setData(current => ({
+      ...current,
+      budgets: {
+        ...current.budgets,
+        [budgetDraft.category]: Number(budgetDraft.amount)
+      }
+    }));
+    budgetModalHandlers.close();
   };
 
   const buyShoppingItem = item => {
@@ -428,7 +454,7 @@ export default function App() {
             initial={{ opacity: 0, y: 16, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.99 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.14, ease: [0.22, 1, 0.36, 1] }}
           >
             <Stack px="md" gap="md">
           {tab === 'home' && (
@@ -555,7 +581,7 @@ export default function App() {
 
           {tab === 'budgets' && (
             <>
-              <SectionHeader label="Control" title="Presupuestos" />
+              <SectionHeader label="Control" title="Presupuestos" action={<ActionIcon size="xl" radius="xl" onClick={() => budgetModalHandlers.open()}><IconPlus size={20} /></ActionIcon>} />
               {Object.entries(data.budgets).map(([category, budget]) => {
                 const spent = monthTx.filter(item => item.tp === 'out' && item.cat === category).reduce((sum, item) => sum + item.amt, 0);
                 return (
@@ -623,14 +649,24 @@ export default function App() {
               <Card radius="xl" withBorder p="lg">
                 <Box h={220}>
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={trend}>
+                    <AreaChart data={trend}>
+                      <defs>
+                        <linearGradient id="histIncomeFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#2dd881" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="#2dd881" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="histExpenseFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#ff5f7a" stopOpacity={0.35} />
+                          <stop offset="100%" stopColor="#ff5f7a" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="4 4" stroke="rgba(148,163,184,.24)" />
                       <XAxis dataKey="mes" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                       <YAxis tickFormatter={value => `₡${Math.round(value / 1000)}k`} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
                       <Tooltip formatter={value => fmt(value)} />
-                      <Line type="monotone" dataKey="Ingresos" stroke="#2dd881" strokeWidth={2} />
-                      <Line type="monotone" dataKey="Gastos" stroke="#ff5f7a" strokeWidth={2} />
-                    </LineChart>
+                      <Area type="monotone" dataKey="Ingresos" stroke="#2dd881" fill="url(#histIncomeFill)" strokeWidth={2.5} />
+                      <Area type="monotone" dataKey="Gastos" stroke="#ff5f7a" fill="url(#histExpenseFill)" strokeWidth={2.5} />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </Box>
                 <Text mt="md" size="sm" c="dimmed">Predicción rápida: si mantienes este ritmo, el gasto próximo mes ronda {fmt(trend.reduce((sum, item) => sum + item.Gastos, 0) / Math.max(trend.length, 1))}.</Text>
@@ -665,6 +701,25 @@ export default function App() {
       </Box>
 
       <TransactionDrawer opened={drawerOpened} onClose={drawerHandlers.close} value={draft} onSave={saveTransaction} onDelete={removeTransaction} cards={data.cards} />
+      <Modal opened={budgetModalOpened} onClose={budgetModalHandlers.close} title="Nuevo presupuesto" centered radius="xl">
+        <Stack>
+          <PickerField
+            label="Categoría"
+            placeholder="Selecciona categoría"
+            options={EXPENSE_CATEGORIES.map(item => ({ value: item, label: item }))}
+            value={budgetDraft.category}
+            onChange={category => setBudgetDraft(current => ({ ...current, category }))}
+          />
+          <NumberInput
+            label="Monto mensual"
+            hideControls
+            thousandSeparator=","
+            value={budgetDraft.amount}
+            onChange={amount => setBudgetDraft(current => ({ ...current, amount: Number(amount) || 0 }))}
+          />
+          <Button onClick={saveBudget}>Guardar presupuesto</Button>
+        </Stack>
+      </Modal>
     </Box>
   );
 }
